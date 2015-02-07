@@ -1,0 +1,138 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:gravity="left|top"
+    android:weightSum="1">
+
+    <RelativeLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#ffdcdc00">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Front Desk"
+            android:id="@+id/btnScreenFD"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="0dp"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="0dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Concessions"
+            android:id="@+id/btnScreenCons"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="110dp"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="0dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="End of Shift Report"
+            android:id="@+id/btnScreenEOSR"
+            android:hint="End of Shift Reporter"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/ButtonLayout"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:layout_weight="4">
+
+            <GridView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:id="@+id/listViewItems"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
+                android:choiceMode="singleChoice"
+                android:divider="#ff00ffe6"
+                android:headerDividersEnabled="false"
+                android:listSelector="#ffff00ea"
+                android:clickable="true"
+                android:longClickable="false"
+                android:numColumns="2" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear"
+                    android:id="@+id/btnCancel"
+                    android:layout_alignBottom="@+id/txtPrice" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:text="$###.##"
+                    android:id="@+id/txtPrice"
+                    android:singleLine="false"
+                    android:layout_centerHorizontal="true"
+                    android:editable="false"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp" />
+
+                <Button
+                    style="?android:attr/buttonStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Enter"
+                    android:id="@+id/btnEnter"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignBottom="@+id/txtPrice"
+                    android:layout_alignParentTop="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#ffff0000"
+        android:layout_gravity="bottom">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Medium Text"
+            android:id="@+id/txtStatus"
+            android:layout_alignParentStart="true"
+            android:textColor="#ff000000" />
+
+    </RelativeLayout>
+
+</LinearLayout>
