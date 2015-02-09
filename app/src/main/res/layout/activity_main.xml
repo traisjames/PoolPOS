@@ -1,81 +1,88 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:orientation="vertical"
+    android:layout_height="match_parent"
     android:gravity="left|top"
+    android:orientation="vertical"
     android:weightSum="1">
 
     <RelativeLayout
-        android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="#ffdcdc00">
+        android:background="#ffdcdc00"
+        android:orientation="horizontal">
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Front Desk"
             android:id="@+id/btnScreenFD"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
             android:layout_marginLeft="0dp"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="0dp" />
+            android:layout_marginTop="0dp"
+            android:text="Front Desk" />
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Concessions"
             android:id="@+id/btnScreenCons"
-            android:layout_alignParentLeft="true"
-            android:layout_marginLeft="110dp"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="0dp" />
-
-        <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="End of Shift Report"
-            android:id="@+id/btnScreenEOSR"
-            android:hint="End of Shift Reporter"
+            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
+            android:layout_marginLeft="110dp"
+            android:layout_marginTop="0dp"
+            android:text="Concessions" />
+
+        <Button
+            android:id="@+id/btnScreenEOSR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_alignParentTop="true"
+            android:hint="End of Shift Reporter"
+            android:text="End of Shift Report" />
 
     </RelativeLayout>
 
-    <LinearLayout
-        android:orientation="horizontal"
+    <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:baselineAligned="false">
+        android:baselineAligned="false"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:id="@+id/ButtonLayout"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginRight="@dimen/TicketWidth"
+            android:background="#ffff8b29"
+            android:orientation="vertical" />
 
         <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
+            android:id="@+id/TicketLayout"
+            android:layout_width="@dimen/TicketWidth"
             android:layout_height="match_parent"
-            android:weightSum="1"
-            android:layout_weight="4">
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentTop="true"
+            android:background="#ffc7ffc3"
+            android:orientation="vertical">
 
-            <GridView
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+            <ListView
                 android:id="@+id/listViewItems"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_weight="1"
-                android:choiceMode="singleChoice"
+                android:choiceMode="none"
+                android:clickable="true"
                 android:divider="#ff00ffe6"
                 android:headerDividersEnabled="false"
                 android:listSelector="#ffff00ea"
-                android:clickable="true"
                 android:longClickable="false"
                 android:numColumns="2" />
 
@@ -84,53 +91,53 @@
                 android:layout_height="wrap_content">
 
                 <Button
+                    android:id="@+id/btnCancel"
                     style="?android:attr/buttonStyleSmall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Clear"
-                    android:id="@+id/btnCancel"
-                    android:layout_alignBottom="@+id/txtPrice" />
+                    android:layout_alignBottom="@+id/txtPrice"
+                    android:text="Clear" />
 
                 <TextView
+                    android:id="@+id/txtPrice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:text="$###.##"
-                    android:id="@+id/txtPrice"
-                    android:singleLine="false"
                     android:layout_centerHorizontal="true"
                     android:editable="false"
+                    android:paddingBottom="5dp"
                     android:paddingTop="5dp"
-                    android:paddingBottom="5dp" />
+                    android:singleLine="false"
+                    android:text="$###.##"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
 
                 <Button
+                    android:id="@+id/btnEnter"
                     style="?android:attr/buttonStyleSmall"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Enter"
-                    android:id="@+id/btnEnter"
+                    android:layout_alignBottom="@+id/txtPrice"
                     android:layout_alignParentEnd="true"
                     android:layout_alignParentRight="true"
-                    android:layout_alignBottom="@+id/txtPrice"
-                    android:layout_alignParentTop="true" />
+                    android:layout_alignParentTop="true"
+                    android:text="Enter" />
             </RelativeLayout>
         </LinearLayout>
 
-    </LinearLayout>
+    </RelativeLayout>
 
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="#ffff0000"
-        android:layout_gravity="bottom">
+        android:layout_gravity="bottom"
+        android:background="#ffff0000">
 
         <TextView
+            android:id="@+id/txtStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Medium Text"
-            android:id="@+id/txtStatus"
             android:layout_alignParentStart="true"
+            android:text="Medium Text"
+            android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="#ff000000" />
 
     </RelativeLayout>
