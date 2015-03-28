@@ -5,9 +5,9 @@ package tech.travis.poolpos;
  */
 public class ItemsList {
     public static final String[][] ENTRY = {
-            {"Daily", "Senior", "Infant"}, {"4", "2", "0"}
+            {"Daily", "Senior", "Infant"}, {"400", "200", "0"}
     };
     public static final String[][] FOOD = {
-            {"Pizza", "Ice Creme", "Popcorn", "Pop", "SG Pop", "Candy", "Nachos", "Apple"}, {"2", "2", "1", "0.75", "2", "1", "0.75", "2"}
+            {"Pizza", "Ice Creme", "Popcorn", "Pop", "SG Pop", "Candy", "Nachos", "Apple"}, {"200", "200", "100", "75", "200", "100", "75", "20"}
     };
 }

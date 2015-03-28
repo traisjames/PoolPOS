@@ -3,42 +3,67 @@ package tech.travis.poolpos;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import java.util.ArrayList;
 
 import static java.lang.Math.ceil;
 import static java.lang.Math.sqrt;
 
+/*todo
+Flavors are being ignored for now.
+ */
 
 public class MainActivity extends Activity {
 
-    MenuMaker orderlist[] = null;
+    ArrayList<MenuMaker> orderlist = new ArrayList<MenuMaker>();
+    ArrayList<MenuMaker> consessionlist = new ArrayList<MenuMaker>();
+    ArrayList<MenuMaker> entrylist = new ArrayList<MenuMaker>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        String[][] strArray = ItemsList.FOOD;
+        Log.v("Checkmark", "Main 1");
+        fillMenu();
+        Log.v("Checkmark", "Main 2");
         createMenuButtons();
-        //createOrderButtons(); //This was a test call.
-
+        Log.v("Checkmark", "Main 3");
     }
 
-    public void createMenuButtons()
+    /* todo?
+    * Pass by reference to fill given menu from 2d string array*/
+    private void fillMenu() {
+        MenuMaker mm;
+        Log.v("Checkmark", "fillMenu 1");
+        for (int i = 0; i < ItemsList.FOOD[0].length; i++) {
+
+            mm = new MenuMaker(ItemsList.FOOD[0][i], Integer.parseInt(ItemsList.FOOD[1][i]), "");
+            consessionlist.add(i, mm);
+        }
+        Log.v("Checkmark", "fillMenu 2");
+        for (int i = 0; i < ItemsList.ENTRY[0].length; i++) {
+            entrylist.add(i, new MenuMaker(ItemsList.ENTRY[0][i], Integer.parseInt(ItemsList.ENTRY[1][i]), ""));
+        }
+        Log.v("Checkmark", "fillMenu 3");
+    }
+
+    private void createMenuButtons()
     {
         LinearLayout layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayout);
         LinearLayout rowLayout=null;
-        int FoodSize = ItemsList.FOOD[0].length;
+        int FoodSize = consessionlist.size();
         int x = (int) ceil(sqrt(FoodSize));
         int y = (int) ceil(sqrt(FoodSize));
         Button[][] buttons = new Button[y][x];
         int count=x*y+1;
-        ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.FILL_PARENT,
-                ViewGroup.LayoutParams.FILL_PARENT,1);
+        //ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.FILL_PARENT,1);
 
         //create buttons
         for (int i = 0; i<y; i++)
@@ -47,7 +72,7 @@ public class MainActivity extends Activity {
             {
                 rowLayout = new LinearLayout(this);
                 rowLayout.setWeightSum(x);
-                layoutVertical.addView(rowLayout,param);
+                layoutVertical.addView(rowLayout);
                 count=count-x;
             }
             for(int j=0;j<x;j++)
@@ -57,7 +82,7 @@ public class MainActivity extends Activity {
                 buttons[i][j].setId(i*x+j);
                 //set text in buttons
                 if ((i*x+j) < FoodSize) {
-                    buttons[i][j].setText(ItemsList.FOOD[0][i * x + j] + " " + buttons[i][j].getId());
+                    buttons[i][j].setText(consessionlist.get(i).getName() + ": " + consessionlist.get(i).getPrice());
                     buttons[i][j].setEnabled(true);
                 }
                 else
@@ -67,79 +92,32 @@ public class MainActivity extends Activity {
                 }
                 buttons[i][j].setTextSize(12);
                 buttons[i][j].setOnClickListener(new POSListListener(i * x + j));
-                rowLayout.addView(buttons[i][j], param);
+                rowLayout.addView(buttons[i][j]);
 
             }
         }
-
     }
 
-    //This method is for testing.  Will be removed for final.
-    public void createOrderButtons() {
+    //todo
+    private void updateorder() {
+    }
 
-        // Access LinearLayout element OrderButtonList
-        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.OrderButtonList);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-
-        int ListSize = ItemsList.ENTRY[0].length;
-        int x = ListSize;
-        Button[] buttons = new Button[x];
-
-        ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
-
-        //Create Buttons test
-
-        for (int i = 0; i < x; i++) {
-
-            buttons[i] = new Button(this);
-            //Set button ID
-            buttons[i].setId(i);
-            if (i % 2 == 0) {
-                buttons[i].setBackgroundColor(0xff00ff00);
-            } else {
-                buttons[i].setBackgroundColor(0xffff0000);
-            }
-            //set text in buttons
-            if ((i) < ListSize) {
-                buttons[i].setText(ItemsList.ENTRY[0][i] + " " + buttons[i].getId());
-                buttons[i].setEnabled(true);
-            } else {
-                buttons[i].setText("NA");
-                buttons[i].setEnabled(false);
-            }
-            buttons[i].setTop(5);
-            buttons[i].setHeight(20);
-            buttons[i].setTextSize(12);
-            buttons[i].setOnClickListener(new POSOrderListener(i));
-
-            linearLayout.addView(buttons[i], param);
+    public void updatetotal() {
+        int total = 0;
+        TextView txt = (TextView) findViewById(R.id.txtPrice);
+        Log.v("Checkmark", "update 1");
+        for (MenuMaker iorder : orderlist) {
+            total += iorder.getPrice();
+            Log.v("Total", "total");
+            txt.setText("$" + total / 100);
         }
-
+        Log.v("Checkmark", "update 2");
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    //Todo
+    //Admin Mode
+    /* Todo
+    * creates button but does not add item to order menu.*/
     void addtomenu(byte mode, int buttonID) {
         int itemcount = 0;
 // Find the ScrollView
@@ -172,20 +150,16 @@ public class MainActivity extends Activity {
 
     }
 
-    //Todo
-    public void updatetotal() {
-    }
 
-    //Button onclick listener
+//On Click Listeners
+
+    /* Menu button click listener.  Runs when an item is selected to be ordered
+     *  */
     class POSListListener implements View.OnClickListener {
         int buttonID;
 
         public POSListListener(int id) {
             buttonID = id;
-        }
-
-        public int getButtonID() {
-            return buttonID;
         }
 
 
@@ -228,12 +202,11 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            int i = orderlist.length;
-            orderlist[orderlist.length] = new MenuMaker();
             String itemName = "";
             int itemPrice = 0;
             String itemFlavors = "";
-            orderlist[0].additem(itemName, itemPrice, itemFlavors);
+            orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
+
         }
 
     }
@@ -244,5 +217,3 @@ public class MainActivity extends Activity {
     //add item from menu to order.
 
 }
-
-
