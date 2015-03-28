@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:rowCount="3"
+    android:columnCount="12"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginRight="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Add Menu Item:"
+            android:id="@+id/textView4"
+            android:layout_marginRight="12dp"
+            android:layout_alignBaseline="@+id/textView"
+            android:layout_alignBottom="@+id/textView"
+            android:layout_alignParentStart="true" />
+
+        <Spinner
+            android:layout_width="120dp"
+            android:layout_height="41dp"
+            android:id="@+id/spinner"
+            android:spinnerMode="dropdown"
+            android:longClickable="false"
+            android:focusableInTouchMode="false"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/textView4" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Item Name:"
+            android:id="@+id/textView"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_alignBaseline="@+id/txtItemName"
+            android:layout_alignBottom="@+id/txtItemName"
+            android:layout_toEndOf="@+id/spinner" />
+
+        <EditText
+            android:layout_width="75dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtItemName"
+            android:layout_column="1"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/textView" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Item Price:"
+            android:id="@+id/textView2"
+            android:layout_row="0"
+            android:layout_column="2"
+            android:layout_alignBaseline="@+id/txtItemPrice"
+            android:layout_alignBottom="@+id/txtItemPrice"
+            android:layout_toEndOf="@+id/txtItemName" />
+
+        <EditText
+            android:layout_width="75dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtItemPrice"
+            android:layout_row="0"
+            android:layout_column="3"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/textView2" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Flavors:"
+            android:id="@+id/textView3"
+            android:layout_row="0"
+            android:layout_column="5"
+            android:layout_alignBaseline="@+id/txtItemPrice"
+            android:layout_alignBottom="@+id/txtItemPrice"
+            android:layout_toEndOf="@+id/txtItemPrice" />
+
+        <EditText
+            android:layout_width="75dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/txtItemFlavors"
+            android:layout_row="0"
+            android:layout_column="6"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/textView3" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Item"
+            android:id="@+id/button"
+            android:layout_row="0"
+            android:layout_column="7"
+            android:layout_alignBottom="@+id/spinner"
+            android:layout_toEndOf="@+id/txtItemFlavors" />
+    </RelativeLayout>
+
+</LinearLayout>
