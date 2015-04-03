@@ -20,6 +20,7 @@
             android:layout_alignParentTop="true"
             android:layout_marginLeft="0dp"
             android:layout_marginTop="0dp"
+            android:onClick="oCEntryMode"
             android:text="Front Desk" />
 
         <Button
@@ -30,6 +31,7 @@
             android:layout_alignParentTop="true"
             android:layout_marginLeft="110dp"
             android:layout_marginTop="0dp"
+            android:onClick="oCConessionMode"
             android:text="Concessions" />
 
         <Button
@@ -40,6 +42,7 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:hint="End of Shift Reporter"
+            android:onClick="oCEOS"
             android:text="End of Shift Report" />
 
     </RelativeLayout>
@@ -52,17 +55,26 @@
         android:orientation="horizontal">
 
         <LinearLayout
-            android:id="@+id/MenuButtonLayout"
+            android:id="@+id/MenuButtonLayoutEntry"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
             android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
             android:background="#ffff8b29"
             android:orientation="vertical">
 
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/MenuButtonLayoutConsessions"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginRight="@dimen/TicketWidth"
+            android:background="#ffffc921"
+            android:orientation="vertical" />
 
         <LinearLayout
             android:id="@+id/TicketLayout"
@@ -80,14 +92,14 @@
                 android:id="@+id/OrderButtonLayout"
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
-                android:background="#ff73fffa"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                android:background="#ff73fffa">
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/OrderButtonList"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
-                    android:id="@+id/OrderButtonList"></LinearLayout>
+                    android:orientation="vertical"></LinearLayout>
             </ScrollView>
 
             <RelativeLayout
@@ -100,6 +112,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignBottom="@+id/txtPrice"
+                    android:onClick="oCclearorder"
                     android:text="Clear" />
 
                 <TextView
@@ -123,6 +136,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_alignParentRight="true"
                     android:layout_alignParentTop="true"
+                    android:onClick="oCsubmitorder"
                     android:text="Enter" />
             </RelativeLayout>
         </LinearLayout>
