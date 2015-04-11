@@ -62,7 +62,8 @@
             android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
             android:background="#ffff8b29"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_alignParentEnd="true">
 
         </LinearLayout>
 
@@ -74,7 +75,8 @@
             android:layout_alignParentEnd="true"
             android:layout_marginRight="@dimen/TicketWidth"
             android:background="#ffffc921"
-            android:orientation="vertical" />
+            android:orientation="vertical"
+            android:layout_alignParentStart="true"/>
 
         <LinearLayout
             android:id="@+id/TicketLayout"
@@ -83,7 +85,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentStart="false"
             android:layout_alignParentTop="true"
-            android:background="#ffc7ffc3"
+            android:background="#ff647e5d"
             android:orientation="vertical"
             android:weightSum="1">
 
@@ -93,9 +95,9 @@
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="#ff73fffa">
+                android:background="#ff2c6564">
 
-                <LinearLayout
+            <LinearLayout
                     android:id="@+id/OrderButtonList"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"

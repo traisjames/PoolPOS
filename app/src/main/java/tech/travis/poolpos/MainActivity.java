@@ -1,5 +1,9 @@
 package tech.travis.poolpos;
 
+/**
+ * Created by travis on 2/1/15.
+ */
+
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -13,7 +17,6 @@ import android.widget.TextView;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 
 import static android.view.View.GONE;
@@ -26,20 +29,24 @@ Flavors are being ignored for now.
  */
 
 public class MainActivity extends Activity {
-    public static final String PREFS_NAME = "MainPrefs";
+    public static final String MAIN_PREFS = "MainPrefs";
+    public static final String STORED_ORDERES = "OrderedPrefs";
+
     NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-    ArrayList<MenuMaker> orderlist = new ArrayList<MenuMaker>();
-    ArrayList<MenuMaker> consessionlist = new ArrayList<MenuMaker>();
-    ArrayList<MenuMaker> entrylist = new ArrayList<MenuMaker>();
-    HashMap<Integer, Integer> buttonlinker = new HashMap<Integer, Integer>();
+    ArrayList<MenuMaker> consessionlist = new ArrayList<MenuMaker>(); //IDs +200
+    ArrayList<MenuMaker> entrylist = new ArrayList<MenuMaker>(); //IDs +100
+    HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key is the item's UID,  value is count
     ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     int mode;
+    static int ordercount = 0;
+
 
     //Added for DEBUGGING
     public static String getMethodName() {
         return Thread.currentThread().getStackTrace()[3].getMethodName();
     }
 
+    //Application events
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,7 +55,7 @@ public class MainActivity extends Activity {
         fillMenu();
 
         // Restore preferences
-        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences settings = getSharedPreferences(MAIN_PREFS, 0);
 
         mode = settings.getInt("Mode", 0);
 
@@ -63,7 +70,7 @@ public class MainActivity extends Activity {
         // We need an Editor object to make preference changes.
         // All objects are from android.context.Context
         //http://developer.android.com/guide/topics/data/data-storage.html
-        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences settings = getSharedPreferences(MAIN_PREFS, 0);
         SharedPreferences.Editor editor = settings.edit();
 
         //Store settings
@@ -106,6 +113,17 @@ public class MainActivity extends Activity {
         }
         Log.i("Finished", getMethodName());
         setmode();
+        initilizeOrder();
+    }
+
+    private void initilizeOrder() {
+        for (MenuMaker mmi : consessionlist) {
+            ordertracker.put(mmi.getUID() + 200, 0);
+        }
+
+        for (MenuMaker mmi : entrylist) {
+            ordertracker.put(mmi.getUID() + 100, 0);
+        }
     }
 
     private void createMenuButtons() {
@@ -138,10 +156,10 @@ public class MainActivity extends Activity {
             for (int j = 0; j < x; j++) {
                 buttons[i][j] = new Button(this);
                 //Set button ID
-                buttons[i][j].setId(j + (i * x));
+                buttons[i][j].setId(j + (i * x) + ((mode + 1) * 100));
                 //set text in buttons
                 if ((i * x + j) < FoodSize) {
-                    buttons[i][j].setText(menulist.get(i * x + j).getName() + ": " + menulist.get(i * x + j).getPrice());
+                    buttons[i][j].setText(menulist.get(i * x + j).getName() + ": " + format.format((double) menulist.get(i * x + j).getPrice() / 100) + "::" + buttons[i][j].getId());
                     buttons[i][j].setEnabled(true);
                 } else {
                     buttons[i][j].setText("NA");
@@ -159,8 +177,12 @@ public class MainActivity extends Activity {
         int total = 0;
         double dtotal;
         TextView txt = (TextView) findViewById(R.id.txtPrice);
-        for (MenuMaker iorder : orderlist) {
-            total += iorder.getPrice();
+        for (MenuMaker mmi : consessionlist) {
+            total += ordertracker.get(mmi.getUID() + 200) * mmi.getPrice();
+        }
+
+        for (MenuMaker mmi : entrylist) {
+            total += ordertracker.get(mmi.getUID() + 100) * mmi.getPrice();
         }
         dtotal = total;
 
@@ -170,17 +192,22 @@ public class MainActivity extends Activity {
     }
 
 
-    //todo
-
     /* Todo
     * creates button and tosses to add to order.  No icrementing reused items.*/
-    int addtoordermenu(byte mode, int buttonID) {
-        int itemcount = 0;
-        // Find the ScrollView
+    int addtoordermenu(int buttonID) {
+
+        //Working here: we need to check to see if this item exits, and if it does incriment item count.
 
         // Access LinearLayout element OrderButtonList
         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.OrderButtonList);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+        //button ID is list menu, working ID is button
+        int workingID = buttonID - ((mode + 1) * 100);
+
+        MenuMaker mm;
+        mm = new MenuMaker(menulist.get(workingID).getName(), menulist.get(workingID).getPrice(), "", 1);
+
 
 
         ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
@@ -190,22 +217,19 @@ public class MainActivity extends Activity {
         Button buttons = new Button(this);
         //Set button ID
         //todo
-        buttons.setId(buttonID);
+        buttons.setId((mode + 1) * 100 + 200 + ordercount++);
 
         //set text in buttons
-        buttons.setText(menulist.get(buttonID).getName() + ": " + menulist.get(buttonID).getPrice());
+        buttons.setText(menulist.get(workingID).getName() + ": " + format.format((double) menulist.get(workingID).getPrice() / 100 * menulist.get(workingID).getCount()) + "::" + buttons.getId());
 
         buttons.setTop(5);
         buttons.setHeight(20);
         buttons.setTextSize(12);
-        buttons.setOnClickListener(new POSOrderListener(buttonID));
+        buttons.setOnClickListener(new POSOrderListener(workingID));
 
         linearLayout.addView(buttons, param);
         Log.i("Finished", getMethodName());
 
-        MenuMaker mm;
-        mm = new MenuMaker(menulist.get(buttonID).getName(), menulist.get(buttonID).getPrice(), "");
-        orderlist.add(mm);
 
         return mm.getUID();
 
@@ -213,7 +237,7 @@ public class MainActivity extends Activity {
 
     public void submitorder() {
         String finalorder = "";
-
+        //Working Here
         Log.i("Order", finalorder);
 
         updatetotal();
@@ -222,14 +246,16 @@ public class MainActivity extends Activity {
     }
 
     public void clearorder() {
-        orderlist.clear();
-        buttonlinker.clear();
+        initilizeOrder();
+        ordertracker.clear();
         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.OrderButtonList);
         linearLayout.removeAllViews();
 
+        initilizeOrder();
         updatetotal();
         Log.i("Finished", getMethodName());
     }
+
 
     //XML created onclick listeners
     public void oCclearorder(View v) {
@@ -246,9 +272,6 @@ public class MainActivity extends Activity {
     public void oCConessionMode(View v) {
         mode = 1;
         setmode();
-        //createMenuButtons();
-
-
         Log.i("Finished", getMethodName());
     }
 
@@ -274,12 +297,19 @@ public class MainActivity extends Activity {
             buttonID = id;
         }
 
-
         @Override
         public void onClick(View v) {
-            byte mode = 1;
-            int uID = addtoordermenu(mode, buttonID);
-            buttonlinker.put(buttonID, uID);
+
+            //todo check the list of already created buttons and if exists increase count.
+            if (ordertracker.get(buttonID + ((mode + 1) * 100)) > 0) {
+                //detect repeat
+                Log.w("Repeat", "");
+            } else {
+
+                int uID = addtoordermenu(buttonID + ((mode + 1) * 100));
+
+            }
+            ordertracker.put(buttonID + ((mode + 1) * 100), ordertracker.get(buttonID + ((mode + 1) * 100)) + 1);
             updatetotal();
             // v.setVisibility(v.GONE); //hide when clicked
             Log.i("Finished", getMethodName());
@@ -303,27 +333,17 @@ public class MainActivity extends Activity {
         @Override
         public void onClick(View view) {
             Log.v("Removing", "Button: " + buttonID);
+            //todo check the list of already created buttons and if exists increase count.
+
             ViewGroup parentView = (ViewGroup) view.getParent();
             parentView.removeView(view);
-            int uID = buttonlinker.get(buttonID);
 
-//Based on http://java67.blogspot.com/2014/03/2-ways-to-remove-elementsobjects-from-ArrayList-java.html
-            Iterator<MenuMaker> MM = orderlist.iterator();
-            while (MM.hasNext()) {
-                MenuMaker mmi = MM.next();
-                Log.d("Checking", String.valueOf(mmi));
-                if (mmi.getUID() == uID) {
-                    orderlist.remove(mmi);
-                    break;
-                }
-            }
 
             updatetotal();
             Log.i("Finished", getMethodName());
         }
 
     }
-
 
     //remove item method
     //find all based on price
@@ -337,7 +357,7 @@ public class MainActivity extends Activity {
             String itemName = "";
             int itemPrice = 0;
             String itemFlavors = "";
-            orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
+            //orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
             Log.i("Finished", getMethodName());
         }
 
