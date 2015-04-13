@@ -48,14 +48,13 @@ Flavors are being ignored for now.
 public class MainActivity extends Activity {
     private static final String MAIN_PREFS = "MainPrefs";
     private static final String STORED_ORDERES = "OrderedPrefs";
-
-    NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-    HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key is the item's UID,  value is count
-    ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
-    int mode;
     private static final String ns = null;
     private static int bUID = 0;
-
+    NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
+    HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
+    HashMap<Integer, Integer> menutracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
+    ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
+    int mode;
 
     //Added for DEBUGGING
     public static String getMethodName() {
@@ -113,26 +112,27 @@ public class MainActivity extends Activity {
 
     private void createOrderButtons() {
 
-        //we need to check to see if this item exits, and if it does incriment item count.
-        Button buttons;
+
+        Button orderButton;
         int btID;
         // Access LinearLayout element OrderButtonList
         LinearLayout linearLayout = (LinearLayout) findViewById(R.id.OrderButtonList);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         for (MenuMaker mm : menulist) {
-            buttons = new Button(this);
-            buttons.setId(bUID++ + 200);
-            btID = buttons.getId();
-            buttons.setText(mm.getName() + ": " + format.format((double) mm.getPrice() / 100 * mm.getCount()) + "::" + btID);
-            menulist.get(mm.getUID()).setOrderButton(btID);
-            buttons.setTop(5);
-            buttons.setHeight(20);
-            buttons.setTextSize(12);
-            buttons.setVisibility(GONE);
-            buttons.setOnClickListener(new POSOrderListener(btID));
+            orderButton = new Button(this);
+            orderButton.setId(bUID++ + 200);
+            btID = orderButton.getId();
+            orderButton.setText(mm.getCount() + " " + mm.getName() + "s: " + format.format((double) mm.getPrice() / 100));
+            ordertracker.put(btID, mm.getUID());
+
+            orderButton.setTop(5);
+            orderButton.setHeight(20);
+            orderButton.setTextSize(12);
+            orderButton.setVisibility(GONE);
+            orderButton.setOnClickListener(new POSOrderListener(btID));
             ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
-            linearLayout.addView(buttons, param);
+            linearLayout.addView(orderButton, param);
         }
 
         Log.i("Finished", getMethodName());
@@ -154,27 +154,28 @@ public class MainActivity extends Activity {
 
 
         layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayoutEntry);
-        LayoutGen(layoutVertical, EntryList);
+        genMenuButtons(layoutVertical, EntryList);
 
         layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayoutConsessions);
-        LayoutGen(layoutVertical, ConsessionList);
+        genMenuButtons(layoutVertical, ConsessionList);
 
         Log.i("Finished", getMethodName());
     }
 
-    private void LayoutGen(LinearLayout layoutVertical, ArrayList<MenuMaker> mml) {
+    private void genMenuButtons(LinearLayout layoutVertical, ArrayList<MenuMaker> mml) {
         //todo limit to 4 accross
         LinearLayout rowLayout = null;
+
+
         int FoodSize = mml.size();
         int x = (int) ceil(sqrt(FoodSize));
         int y = (int) ceil(sqrt(FoodSize));
         Button[][] buttons = new Button[y][x];
         int count = x * y + 1;
         int counter;
-
         int btID;
 
-        //create buttons
+        //create order buttons
         out:
         for (int i = 0; i < y; i++) {
             if (count % x == 1) {
@@ -186,93 +187,67 @@ public class MainActivity extends Activity {
             for (int j = 0; j < x; j++) {
                 counter = i * x + j;
                 if (counter < FoodSize) {
-                buttons[i][j] = new Button(this);
+                    buttons[i][j] = new Button(this);
 
                     buttons[i][j].setId(bUID++ + 100);
                     btID = buttons[i][j].getId();
-                    menulist.get(mml.get(counter).getUID()).setOrderButton(btID);
-                    buttons[i][j].setText(mml.get(counter).getName() + ": " + format.format((double) mml.get(counter).getPrice() / 100) + "::" + buttons[i][j].getId());
+                    menutracker.put(btID, mml.get(counter).getUID());
+                    buttons[i][j].setText(mml.get(counter).getName() + ": " + format.format((double) mml.get(counter).getPrice() / 100));
                     buttons[i][j].setEnabled(true);
-                buttons[i][j].setTextSize(12);
+                    buttons[i][j].setTextSize(12);
                     buttons[i][j].setOnClickListener(new POSListListener(counter));
                     //buttons[i][j].setWidth(150);
-
-
-                rowLayout.addView(buttons[i][j]);
-
+                    rowLayout.addView(buttons[i][j]);
 
                 } else {
                     break out;
                 }
-
-
             }
         }
-
-
     }
 
     public int updatetotal() {
+
         int total = 0;
         double dtotal;
         TextView txt = (TextView) findViewById(R.id.txtPrice);
         for (MenuMaker mmi : menulist) {
             total += mmi.getCount() * mmi.getPrice();
-        }
 
+        }
         dtotal = total;
 
         txt.setText(format.format(dtotal / 100));
         Log.i("Finished", getMethodName());
+        refreshOrder();
         return total;
     }
 
+    private void refreshOrder() {
+        LinearLayout OrderView = (LinearLayout) findViewById(R.id.OrderButtonList);
+        int oID = 0;
+        for (int i = 0; i < OrderView.getChildCount(); i++) {
+            Button child = (Button) OrderView.getChildAt(i);
 
-    /* Todo
-    * creates button and tosses to add to order.  No icrementing reused itemscsv.*/
-    int addtoordermenu(int buttonID) {
+            if (menulist.get(i).getCount() > 0) {
 
-        //we need to check to see if this item exits, and if it does incriment item count.
+                oID = ordertracker.get(child.getId());
+                child.setText(menulist.get(oID).getCount() + " " + menulist.get(oID).getName() + "s: " + format.format((double) menulist.get(oID).getPrice() / 100));
 
-        // Access LinearLayout element OrderButtonList
-        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.OrderButtonList);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-
-        //button ID is list menu, working ID is button
-        int workingID = buttonID;
-
-        MenuMaker mm;
-        mm = new MenuMaker(menulist.get(workingID).getName(), menulist.get(workingID).getPrice(), "", 1, menulist.get(workingID).getType());
-
-
-        ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
-
-        //Create Buttons test
-
-        Button buttons = new Button(this);
-        //Set button ID
-        //todo
-
-
-        //set text in buttons
-        buttons.setText(menulist.get(workingID).getName() + ": " + format.format((double) menulist.get(workingID).getPrice() / 100 * menulist.get(workingID).getCount()) + "::" + buttons.getId());
-
-        buttons.setTop(5);
-        buttons.setHeight(20);
-        buttons.setTextSize(12);
-        buttons.setOnClickListener(new POSOrderListener(workingID));
-
-        linearLayout.addView(buttons, param);
-        Log.i("Finished", getMethodName());
-
-
-        return mm.getUID();
-
+                child.setVisibility(VISIBLE);
+            } else {
+                child.setVisibility(GONE);
+            }
+            child.invalidate();
+        }
     }
+
+
+
 
     public void submitorder() {
         String finalorder = "";
-        //Working Here
+        //Todo
         Log.i("Order", finalorder);
 
         updatetotal();
@@ -282,7 +257,9 @@ public class MainActivity extends Activity {
 
     public void clearorder() {
         //Todo
-
+        for (int i = 0; i < menulist.size(); i++) {
+            menulist.get(i).resetCount();
+        }
 
         updatetotal();
         Log.i("Finished", getMethodName());
@@ -319,136 +296,58 @@ public class MainActivity extends Activity {
         Log.i("Finished", getMethodName());
     }
 
-    //Programicly created onclick listeners
-    /* Menu button click listener.  Runs when an item is selected to be ordered
-     *  */
-    class POSListListener implements View.OnClickListener {
-        int buttonID;
+//File handleing
+private void openItemsFile() {
+    List lst = new ArrayList();
+    InputStream in = null;
+    File file = null;
+    if (isExternalStorageReadable()) {
+        //Find the directory for the SD Card using the API
+        //*Don't* hardcode "/sdcard"
+        File sdcard = Environment.getExternalStorageDirectory();
 
-        public POSListListener(int id) {
-            buttonID = id;
-        }
-
-        @Override
-        public void onClick(View v) {
-            int UID = 0;
-
-            //find menulist with menu ID of buttonID
-            for (MenuMaker mmi : menulist) {
-                //compare ID
-                if (mmi.getMenuButton() == buttonID) {
-                    UID = mmi.getUID();
-
-                    break;
-                }
-            }
-
-            //get UID from orderid
-            menulist.get(UID).incCount();
-
-            updatetotal();
-
-
-            Log.i("Finished", getMethodName());
-        }
-    }
-
-    //Remove Order itemscsv
-    class POSOrderListener implements View.OnClickListener {
-
-        int buttonID;
-
-        public POSOrderListener(int id) {
-            buttonID = id;
-        }
-
-        public int getButtonID() {
-            return buttonID;
-        }
-
-
-        @Override
-        public void onClick(View view) {
-            Log.v("Removing", "Button: " + buttonID);
-            //todo check the list of already created buttons and if exists increase count.
-
-            ViewGroup parentView = (ViewGroup) view.getParent();
-            parentView.removeView(view);
-
-
-            updatetotal();
-            Log.i("Finished", getMethodName());
-        }
-
-    }
-
-    //remove item method
-    //find all based on price
-    //add item from menu to order.
-
-    //add new item method
-    class ButtonAddNewItem implements View.OnClickListener {
-
-        @Override
-        public void onClick(View view) {
-            String itemName = "";
-            int itemPrice = 0;
-            String itemFlavors = "";
-            //orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
-            Log.i("Finished", getMethodName());
-        }
-
-    }
-
-
-    //File handleing
-    private void openItemsFile() {
-        List lst = new ArrayList();
-        InputStream in = null;
-        File file = null;
-        if (isExternalStorageReadable()) {
-            //Find the directory for the SD Card using the API
-            //*Don't* hardcode "/sdcard"
-            File sdcard = Environment.getExternalStorageDirectory();
-
-            //Get the text file
-            file = new File(sdcard, "items.xml");
+        //Get the text file
+        file = new File(sdcard, "items.xml");
 
         }
 
+    try {
+        if (file.exists()) //check if xml is on sd card
+        {
+            //it does so use it
+            in = new BufferedInputStream(new FileInputStream(file));
+        } else {
+            //nope
+            in = getAssets().open("items.xml");
+        }
+
+        lst = parse(in);
+
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    } catch (XmlPullParserException e) {
+        e.printStackTrace();
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
         try {
-            if (file.exists()) //check if xml is on sd card
-            {
-                //it does so use it
-                in = new BufferedInputStream(new FileInputStream(file));
-            } else {
-                //nope
-                in = getAssets().open("items.xml");
-            }
-
-            lst = parse(in);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (XmlPullParserException e) {
-            e.printStackTrace();
+            if (in != null) {
+                in.close();
+                }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        }
+    }
 
 
     }
 
     private void saveItemsFile() {
     }
+
+    //remove item method
+    //find all based on price
+    //add item from menu to order.
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
@@ -467,7 +366,6 @@ public class MainActivity extends Activity {
         }
         return false;
     }
-
 
     //XML parsing
     public List parse(InputStream in) throws XmlPullParserException, IOException {
@@ -559,7 +457,6 @@ public class MainActivity extends Activity {
         return text;
     }
 
-
     // Processes Flavor tags in the feed.
     private String readFlavors(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(START_TAG, ns, "Flavor");
@@ -593,6 +490,69 @@ public class MainActivity extends Activity {
                     break;
             }
         }
+    }
+
+    //Programicly created onclick listeners
+    /* Menu button click listener.  Runs when an item is selected to be ordered
+     *  */
+    class POSListListener implements View.OnClickListener {
+        int buttonID;
+
+        public POSListListener(int id) {
+            buttonID = id;
+        }
+
+        @Override
+        public void onClick(View v) {
+            int UID = 0;
+            //find menulist with menu ID of buttonID
+            menulist.get(menutracker.get(v.getId())).incCount();
+
+            updatetotal();
+
+            Log.i("Finished", getMethodName());
+        }
+    }
+
+    //Remove Order itemscsv
+    class POSOrderListener implements View.OnClickListener {
+
+        int buttonID;
+
+        public POSOrderListener(int id) {
+            buttonID = id;
+        }
+
+        public int getButtonID() {
+            return buttonID;
+        }
+
+
+        @Override
+        public void onClick(View view) {
+            Log.v("Removing", "Button: " + buttonID);
+
+            menulist.get(ordertracker.get(buttonID)).decCount();
+
+
+            updatetotal();
+            Log.i("Finished", getMethodName());
+        }
+
+    }
+
+    //add new item method
+    class ButtonAddNewItem implements View.OnClickListener {
+
+        @Override
+        public void onClick(View view) {
+            String itemName = "";
+            int itemPrice = 0;
+            String itemFlavors = "";
+            //orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
+            Log.i("Finished", getMethodName());
+        }
+
     }
 
 }
