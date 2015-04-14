@@ -40,6 +40,8 @@ import static org.xmlpull.v1.XmlPullParser.END_TAG;
 import static org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES;
 import static org.xmlpull.v1.XmlPullParser.START_TAG;
 import static org.xmlpull.v1.XmlPullParser.TEXT;
+import static tech.travis.poolpos.R.layout.activity_main;
+import static tech.travis.poolpos.R.layout.orderup;
 
 /*todo
 Flavors are being ignored for now.
@@ -53,6 +55,7 @@ public class MainActivity extends Activity {
     NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
     HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
     HashMap<Integer, Integer> menutracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
+    HashMap<Integer, Integer> finaltracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
     ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     int mode;
 
@@ -213,7 +216,6 @@ public class MainActivity extends Activity {
         TextView txt = (TextView) findViewById(R.id.txtPrice);
         for (MenuMaker mmi : menulist) {
             total += mmi.getCount() * mmi.getPrice();
-
         }
         dtotal = total;
 
@@ -225,7 +227,7 @@ public class MainActivity extends Activity {
 
     private void refreshOrder() {
         LinearLayout OrderView = (LinearLayout) findViewById(R.id.OrderButtonList);
-        int oID = 0;
+        int oID;
         for (int i = 0; i < OrderView.getChildCount(); i++) {
             Button child = (Button) OrderView.getChildAt(i);
 
@@ -242,21 +244,49 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void OrderGen() {
+        Button orderButton;
+        int btID;
+        // Access LinearLayout element OrderButtonList
+        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.FinalOrder);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
 
+        for (MenuMaker mm : menulist) {
+            if (mm.getCount() > 0) {
+                orderButton = new Button(this);
+                orderButton.setId(bUID++ + 600);
+                btID = orderButton.getId();
+                orderButton.setText(mm.getName() + ": " + mm.getCount());
+                finaltracker.put(btID, mm.getUID());
+
+                orderButton.setTop(5);
+                orderButton.setHeight(20);
+                orderButton.setTextSize(14);
+                orderButton.setVisibility(VISIBLE);
+                orderButton.setOnClickListener(new POSFinalOrderListener(btID));
+                ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
+                linearLayout.addView(orderButton, param);
+            }
+        }
+
+        Log.i("Finished", getMethodName());
+    }
 
 
     public void submitorder() {
         String finalorder = "";
         //Todo
+        updatetotal();
+        setContentView(orderup);
+        OrderGen();
+        //StoreOrder
         Log.i("Order", finalorder);
 
-        updatetotal();
-        clearorder();
+
         Log.i("Finished", getMethodName());
     }
 
     public void clearorder() {
-        //Todo
         for (int i = 0; i < menulist.size(); i++) {
             menulist.get(i).resetCount();
         }
@@ -274,7 +304,6 @@ public class MainActivity extends Activity {
 
     public void oCsubmitorder(View v) {
         submitorder();
-        clearorder();
         Log.i("Finished", getMethodName());
     }
 
@@ -298,7 +327,7 @@ public class MainActivity extends Activity {
 
 //File handleing
 private void openItemsFile() {
-    List lst = new ArrayList();
+
     InputStream in = null;
     File file = null;
     if (isExternalStorageReadable()) {
@@ -321,7 +350,7 @@ private void openItemsFile() {
             in = getAssets().open("items.xml");
         }
 
-        lst = parse(in);
+        parse(in);
 
     } catch (FileNotFoundException e) {
         e.printStackTrace();
@@ -493,8 +522,8 @@ private void openItemsFile() {
     }
 
     //Programicly created onclick listeners
-    /* Menu button click listener.  Runs when an item is selected to be ordered
-     *  */
+
+    //Menu button click listener.  Runs when an item is selected to be ordered
     class POSListListener implements View.OnClickListener {
         int buttonID;
 
@@ -504,7 +533,6 @@ private void openItemsFile() {
 
         @Override
         public void onClick(View v) {
-            int UID = 0;
             //find menulist with menu ID of buttonID
             menulist.get(menutracker.get(v.getId())).incCount();
 
@@ -523,10 +551,6 @@ private void openItemsFile() {
             buttonID = id;
         }
 
-        public int getButtonID() {
-            return buttonID;
-        }
-
 
         @Override
         public void onClick(View view) {
@@ -536,6 +560,52 @@ private void openItemsFile() {
 
 
             updatetotal();
+            Log.i("Finished", getMethodName());
+        }
+
+    }
+
+    class POSFinalOrderListener implements View.OnClickListener {
+
+        int buttonID;
+
+        public POSFinalOrderListener(int id) {
+            buttonID = id;
+        }
+
+
+        @Override
+        public void onClick(View view) {
+            int oID;
+            Log.v("Removing", "Button: " + buttonID);
+
+            menulist.get(finaltracker.get(buttonID)).decCount();
+
+            oID = finaltracker.get(view.getId());
+            Button bview = (Button) view;
+            bview.setText(menulist.get(oID).getName() + ": " + menulist.get(oID).getCount()); //todo
+
+            view.invalidate();
+            ViewGroup layout = (ViewGroup) view.getParent();
+            if (menulist.get(finaltracker.get(buttonID)).getCount() == 0) {
+
+                if (null != layout) {
+                    layout.removeView(view);
+                }
+            }
+
+            //May be sinning here but it works:
+            if (layout.getChildCount() == 0) {
+                setContentView(activity_main);
+                LinearLayout MenuView = (LinearLayout) findViewById(R.id.MenuButtonLayoutConsessions);
+
+                for (int i = 0; i < MenuView.getChildCount(); i++) {
+                    Button child = (Button) MenuView.getChildAt(i);
+                    child.setVisibility(VISIBLE);
+                    child.invalidate();
+                }
+            }
+
             Log.i("Finished", getMethodName());
         }
 
