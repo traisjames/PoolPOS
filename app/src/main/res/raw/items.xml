@@ -34,6 +34,39 @@
         <Flavor></Flavor>
     </Item>
     <Item>
+        <Item_Name>Family Pass Entry</Item_Name>
+        <Price>0</Price>
+        <Type>Entry</Type>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+    </Item>
+    <Item>
+        <Item_Name>Individual Pass Entry</Item_Name>
+        <Price>0</Price>
+        <Type>Entry</Type>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+    </Item>
+    <Item>
+        <Item_Name>Special Admission</Item_Name>
+        <Price>400</Price>
+        <Type>Entry</Type>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+    </Item>
+    <Item>
         <Item_Name>10 pass</Item_Name>
         <Price>4000</Price>
         <Type>Entry</Type>
@@ -45,8 +78,30 @@
         <Flavor></Flavor>
     </Item>
     <Item>
-        <Item_Name>Season Pass</Item_Name>
-        <Price>15000</Price>
+        <Item_Name>Family Pass Sale</Item_Name>
+        <Price>25000</Price>
+        <Type>Entry</Type>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+    </Item>
+    <Item>
+        <Item_Name>Individual Pass Sale</Item_Name>
+        <Price>7500</Price>
+        <Type>Entry</Type>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+        <Flavor></Flavor>
+    </Item>
+    <Item>
+        <Item_Name>Diaper</Item_Name>
+        <Price>200</Price>
         <Type>Entry</Type>
         <Flavor></Flavor>
         <Flavor></Flavor>

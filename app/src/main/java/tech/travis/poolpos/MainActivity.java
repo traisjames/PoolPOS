@@ -8,6 +8,7 @@ package tech.travis.poolpos;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.graphics.Point;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -29,10 +30,13 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +44,8 @@ import java.util.Locale;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static java.lang.Math.ceil;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Math.sqrt;
 import static org.xmlpull.v1.XmlPullParser.END_TAG;
 import static org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES;
@@ -61,6 +67,7 @@ public class MainActivity extends Activity {
     HashMap<Integer, Integer> finaltracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
     ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     int mode;
+    Calendar c = Calendar.getInstance();
     private PopupWindow popupWindow;
 
     //Added for DEBUGGING
@@ -133,12 +140,12 @@ public class MainActivity extends Activity {
             orderButton.setText(mm.getCount() + " " + mm.getName() + "s: " + format.format((double) mm.getPrice() / 100));
             ordertracker.put(btID, mm.getUID());
 
-            orderButton.setTop(5);
-            orderButton.setHeight(20);
-            orderButton.setTextSize(12);
+            ;
+            orderButton.setTypeface(null, Typeface.BOLD);
+            orderButton.setTextSize(16);
             orderButton.setVisibility(GONE);
             orderButton.setOnClickListener(new POSOrderListener(btID));
-            ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
+            ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, min(LayoutParams.WRAP_CONTENT, 30), 1);
             linearLayout.addView(orderButton, param);
         }
 
@@ -170,9 +177,14 @@ public class MainActivity extends Activity {
     }
 
     private void genMenuButtons(LinearLayout layoutVertical, ArrayList<MenuMaker> mml) {
-        //todo limit to 4 accross
+
         LinearLayout rowLayout = null;
 
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int height = size.y;
 
         int FoodSize = mml.size();
         int x = (int) ceil(sqrt(FoodSize));
@@ -181,6 +193,7 @@ public class MainActivity extends Activity {
         int count = x * y + 1;
         int counter;
         int btID;
+        String buttontext;
 
         //create order buttons
         out:
@@ -188,6 +201,7 @@ public class MainActivity extends Activity {
             if (count % x == 1) {
                 rowLayout = new LinearLayout(this);
                 rowLayout.setWeightSum(x);
+                rowLayout.setBaselineAligned(false);
                 layoutVertical.addView(rowLayout);
                 count = count - x;
             }
@@ -199,11 +213,17 @@ public class MainActivity extends Activity {
                     buttons[i][j].setId(bUID++ + 100);
                     btID = buttons[i][j].getId();
                     menutracker.put(btID, mml.get(counter).getUID());
-                    buttons[i][j].setText(mml.get(counter).getName() + ": " + format.format((double) mml.get(counter).getPrice() / 100));
+                    buttontext = mml.get(counter).getName() + ": " + format.format((double) mml.get(counter).getPrice() / 100);
+
+                    String pattern = "(\\w.+?\\s\\w.+?)\\s(\\w+)";
+
+                    buttons[i][j].setText(buttontext.replaceAll(pattern, "$1\n$2"));
                     buttons[i][j].setEnabled(true);
-                    buttons[i][j].setTextSize(12);
+                    buttons[i][j].setTextSize(14);
+                    buttons[i][j].setTypeface(null, Typeface.BOLD);
+                    buttons[i][j].setWidth(width / (x + 1) - 30);
+                    buttons[i][j].setHeight(max(height / (y + 1), LayoutParams.WRAP_CONTENT));
                     buttons[i][j].setOnClickListener(new POSListListener(counter));
-                    //buttons[i][j].setWidth(150);
                     rowLayout.addView(buttons[i][j]);
 
                 } else {
@@ -250,7 +270,6 @@ public class MainActivity extends Activity {
 
 
     public void submitorder() {
-        String finalorder = "";
 
         updatetotal();
 
@@ -264,10 +283,9 @@ public class MainActivity extends Activity {
         display.getSize(size);
         int width = size.x;
         int height = size.y;
-        popupWindow.setWidth(width - 100);
-        popupWindow.setHeight(height - 100);
+        popupWindow.setWidth(width);
+        popupWindow.setHeight(height);
 
-        //popupWindow.showAsDropDown(findViewById(R.id.posMain), 50, -1*(height-50));
 
         Button orderButton;
         int btID;
@@ -276,9 +294,9 @@ public class MainActivity extends Activity {
 
         LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.FinalOrder);
         //linearLayout.setOrientation(LinearLayout.VERTICAL);
-
+        boolean entryonly = true;
         for (MenuMaker mm : menulist) {
-            if (mm.getCount() > 0) {
+            if (mm.getCount() > 0 && !mm.getType().equals("Entry")) {
                 orderButton = new Button(this);
                 orderButton.setId(bUID++ + 600);
                 btID = orderButton.getId();
@@ -293,18 +311,37 @@ public class MainActivity extends Activity {
                 orderButton.setOnClickListener(new POSFinalOrderListener(btID));
                 LayoutParams param = new LinearLayout.LayoutParams(200, LayoutParams.WRAP_CONTENT, 0);
                 linearLayout.addView(orderButton, param);
+                entryonly = false;
 
 
             }
         }
-        popupWindow.showAsDropDown(findViewById(R.id.posMain), 50, -1 * (height - 50));
+        //only shows window if something from conessions was added.
+        storeorder();
+        if (entryonly) {
+            clearorder();
+        } else {
+            popupWindow.showAsDropDown(findViewById(R.id.posMain), 0, -1 * (height));
 
-
-        //TODO StoreOrder
+        }
 
 
         Log.i("Finished", getMethodName());
     }
+
+    private void storeorder() {
+        StringBuilder orderstring = new StringBuilder(menulist.size() * 1 + 30);
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = df.format(c.getTime());
+
+        orderstring.append(formattedDate + ",");
+        for (MenuMaker mm : menulist) {
+            orderstring.append(mm.getCount() + ",");
+        }
+        Log.v("Order:", orderstring.toString());
+        saveCSV("Orders.csv", orderstring.toString());
+    }
+
 
     public void clearorder() {
         for (int i = 0; i < menulist.size(); i++) {
@@ -394,6 +431,29 @@ private void openItemsFile() {
     private void saveItemsFile() {
     }
 
+    private void saveCSV(String filename, String output) {
+
+        if (isExternalStorageWritable()) {
+            try {
+                File sdcard = Environment.getExternalStorageDirectory();
+                if (!sdcard.exists()) {
+                    Log.i("File", "Creating New");
+                    sdcard.createNewFile();
+                }
+                File gpxfile = new File(sdcard, filename);
+                FileWriter writer = new FileWriter(gpxfile, true);
+                writer.append(output + "\n");
+                writer.flush();
+                writer.close();
+                Log.i("File", "Write complete");
+            } catch (IOException e) {
+                e.printStackTrace();
+
+            }
+        }
+
+
+    }
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
