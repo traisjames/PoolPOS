@@ -1,4 +1,5 @@
 <LinearLayout
+    android:id="@+id/posMain"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -21,7 +22,7 @@
             android:layout_marginLeft="0dp"
             android:layout_marginTop="0dp"
             android:onClick="oCEntryMode"
-            android:text="Front Desk" />
+            android:text="Front Desk"/>
 
         <Button
             android:id="@+id/btnScreenCons"
@@ -32,7 +33,7 @@
             android:layout_marginLeft="110dp"
             android:layout_marginTop="0dp"
             android:onClick="oCConessionMode"
-            android:text="Concessions" />
+            android:text="Concessions"/>
 
         <Button
             android:id="@+id/btnScreenEOSR"
@@ -43,7 +44,7 @@
             android:layout_alignParentTop="true"
             android:hint="End of Shift Reporter"
             android:onClick="oCEOS"
-            android:text="End of Shift Report" />
+            android:text="End of Shift Report"/>
 
     </RelativeLayout>
 
@@ -59,11 +60,11 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
             android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
             android:background="#ffff8b29"
-            android:orientation="vertical"
-            android:layout_alignParentEnd="true">
+            android:orientation="vertical">
 
         </LinearLayout>
 
@@ -73,10 +74,10 @@
             android:layout_height="match_parent"
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
             android:background="#ffffc921"
-            android:orientation="vertical"
-            android:layout_alignParentStart="true"/>
+            android:orientation="vertical"/>
 
         <LinearLayout
             android:id="@+id/TicketLayout"
@@ -97,7 +98,7 @@
                 android:layout_weight="1"
                 android:background="#ff2c6564">
 
-            <LinearLayout
+                <LinearLayout
                     android:id="@+id/OrderButtonList"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
@@ -115,7 +116,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignBottom="@+id/txtPrice"
                     android:onClick="oCclearorder"
-                    android:text="Clear" />
+                    android:text="Clear"/>
 
                 <TextView
                     android:id="@+id/txtPrice"
@@ -127,7 +128,7 @@
                     android:paddingTop="5dp"
                     android:singleLine="false"
                     android:text="$###.##"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
+                    android:textAppearance="?android:attr/textAppearanceLarge"/>
 
                 <Button
                     android:id="@+id/btnEnter"
@@ -139,7 +140,7 @@
                     android:layout_alignParentRight="true"
                     android:layout_alignParentTop="true"
                     android:onClick="oCsubmitorder"
-                    android:text="Enter" />
+                    android:text="Enter"/>
             </RelativeLayout>
         </LinearLayout>
 
@@ -158,7 +159,7 @@
             android:layout_alignParentStart="true"
             android:text="Medium Text"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#ff000000" />
+            android:textColor="#ff000000"/>
 
     </RelativeLayout>
 

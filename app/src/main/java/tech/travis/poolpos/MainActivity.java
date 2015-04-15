@@ -7,14 +7,19 @@ package tech.travis.poolpos;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Xml;
+import android.view.Display;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -40,8 +45,6 @@ import static org.xmlpull.v1.XmlPullParser.END_TAG;
 import static org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES;
 import static org.xmlpull.v1.XmlPullParser.START_TAG;
 import static org.xmlpull.v1.XmlPullParser.TEXT;
-import static tech.travis.poolpos.R.layout.activity_main;
-import static tech.travis.poolpos.R.layout.orderup;
 
 /*todo
 Flavors are being ignored for now.
@@ -58,6 +61,7 @@ public class MainActivity extends Activity {
     HashMap<Integer, Integer> finaltracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
     ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     int mode;
+    private PopupWindow popupWindow;
 
     //Added for DEBUGGING
     public static String getMethodName() {
@@ -244,12 +248,34 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void OrderGen() {
+
+    public void submitorder() {
+        String finalorder = "";
+
+        updatetotal();
+
+
+        LayoutInflater layoutInflater = (LayoutInflater) getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = layoutInflater.inflate(R.layout.orderup, null);
+        popupWindow = new PopupWindow(popupView, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int height = size.y;
+        popupWindow.setWidth(width - 100);
+        popupWindow.setHeight(height - 100);
+
+        //popupWindow.showAsDropDown(findViewById(R.id.posMain), 50, -1*(height-50));
+
         Button orderButton;
         int btID;
         // Access LinearLayout element OrderButtonList
-        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.FinalOrder);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+
+        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.FinalOrder);
+        //linearLayout.setOrientation(LinearLayout.VERTICAL);
 
         for (MenuMaker mm : menulist) {
             if (mm.getCount() > 0) {
@@ -259,28 +285,22 @@ public class MainActivity extends Activity {
                 orderButton.setText(mm.getName() + ": " + mm.getCount());
                 finaltracker.put(btID, mm.getUID());
 
-                orderButton.setTop(5);
+
                 orderButton.setHeight(20);
+                orderButton.setWidth(200);
                 orderButton.setTextSize(14);
                 orderButton.setVisibility(VISIBLE);
                 orderButton.setOnClickListener(new POSFinalOrderListener(btID));
-                ViewGroup.LayoutParams param = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT, 1);
+                LayoutParams param = new LinearLayout.LayoutParams(200, LayoutParams.WRAP_CONTENT, 0);
                 linearLayout.addView(orderButton, param);
+
+
             }
         }
-
-        Log.i("Finished", getMethodName());
-    }
+        popupWindow.showAsDropDown(findViewById(R.id.posMain), 50, -1 * (height - 50));
 
 
-    public void submitorder() {
-        String finalorder = "";
-        //Todo
-        updatetotal();
-        setContentView(orderup);
-        OrderGen();
-        //StoreOrder
-        Log.i("Order", finalorder);
+        //TODO StoreOrder
 
 
         Log.i("Finished", getMethodName());
@@ -374,9 +394,6 @@ private void openItemsFile() {
     private void saveItemsFile() {
     }
 
-    //remove item method
-    //find all based on price
-    //add item from menu to order.
 
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
@@ -565,6 +582,7 @@ private void openItemsFile() {
 
     }
 
+    //on order up, clicking a button to mark it as gotten.
     class POSFinalOrderListener implements View.OnClickListener {
 
         int buttonID;
@@ -593,17 +611,16 @@ private void openItemsFile() {
                     layout.removeView(view);
                 }
             }
-
+            Log.v("Child count", layout.getChildCount() + "");
             //May be sinning here but it works:
             if (layout.getChildCount() == 0) {
-                setContentView(activity_main);
-                LinearLayout MenuView = (LinearLayout) findViewById(R.id.MenuButtonLayoutConsessions);
 
-                for (int i = 0; i < MenuView.getChildCount(); i++) {
-                    Button child = (Button) MenuView.getChildAt(i);
-                    child.setVisibility(VISIBLE);
-                    child.invalidate();
-                }
+                popupWindow.dismiss(); //Dismiss PopupWindow
+                finaltracker.clear();
+                clearorder();
+                refreshOrder();
+
+
             }
 
             Log.i("Finished", getMethodName());
