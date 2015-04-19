@@ -2,7 +2,7 @@ package tech.travis.poolpos;
 
 /**
  * Created by travis on 2/1/15.
- * Last update by Travis: 4/12/15 3:00
+ * Last update by Travis: 4/15/15 3:00
  */
 
 import android.app.Activity;
@@ -11,6 +11,7 @@ import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Xml;
 import android.view.Display;
@@ -22,6 +23,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -57,18 +59,28 @@ Flavors are being ignored for now.
  */
 
 public class MainActivity extends Activity {
-    private static final String MAIN_PREFS = "MainPrefs";
-    private static final String STORED_ORDERES = "OrderedPrefs";
+    private static final String MAIN_PREFS = "";
     private static final String ns = null;
-    private static int bUID = 0;
-    NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-    HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
-    HashMap<Integer, Integer> menutracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
-    HashMap<Integer, Integer> finaltracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
-    ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
+    final NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
     int mode;
-    Calendar c = Calendar.getInstance();
+    private int bUID = 0;
+    private HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
+    private HashMap<Integer, Integer> menutracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
+    private HashMap<Integer, Integer> finaltracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
+    private HashMap<Integer, Integer> EODtracker = new HashMap<Integer, Integer>();  //Key MMID,  value is count.D
+    private ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
+    private Calendar c = Calendar.getInstance();
+
     private PopupWindow popupWindow;
+
+    private boolean doubleBackToExitPressedOnce;
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            doubleBackToExitPressedOnce = false;
+        }
+    };
+    private Handler mHandler;
 
     //Added for DEBUGGING
     public static String getMethodName() {
@@ -79,8 +91,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Log.i("Started", getMethodName());
         setContentView(R.layout.activity_main);
+
         openItemsFile();
         createMenuButtons();
         createOrderButtons();
@@ -88,26 +101,119 @@ public class MainActivity extends Activity {
         // Restore preferences
         SharedPreferences settings = getSharedPreferences(MAIN_PREFS, 0);
 
+        String EODRestore = settings.getString("SavedEOD", "");
+        Log.i("Restoring", EODRestore);
+
+
+        if (!EODRestore.isEmpty()) {
+            String[] EODR = EODRestore.split(",");
+            EODtracker.clear();
+            for (int i = 0; i < EODR.length; i++) {
+
+                EODtracker.put(i, Integer.parseInt(EODR[i]));
+
+            }
+        }
+
         mode = settings.getInt("Mode", 0);
         setmode();
 
         Log.i("Finished", getMethodName());
     }
 
-    protected void onStop() {
-        super.onStop();
+    @Override
+    protected void onRestart() {
+        Log.i("Started", getMethodName());
+
+        super.onRestart();
+        Log.i("Finished", getMethodName());
+    }
+
+
+    @Override
+    protected void onPause() {
+        Log.i("Started", getMethodName());
+        super.onPause();
 
         // We need an Editor object to make preference changes.
         // All objects are from android.context.Context
         //http://developer.android.com/guide/topics/data/data-storage.html
-        SharedPreferences settings = getSharedPreferences(MAIN_PREFS, 0);
+        SharedPreferences settings = getApplicationContext().getSharedPreferences(MAIN_PREFS, 0);
         SharedPreferences.Editor editor = settings.edit();
-
         //Store settings
         editor.putInt("Mode", mode);
 
+
+        StringBuilder orderstring = new StringBuilder(EODtracker.size() * 1 + 30);
+
+        for (int i = 0; i < menulist.size(); i++) {
+
+            orderstring.append(EODtracker.get(i) + ",");
+        }
+
+
+        editor.putString("SavedEOD", orderstring.toString());
+
         // Commit the edits!
-        editor.commit();
+        Log.i("Commiting", orderstring.toString());
+        Log.i("Commiting", String.valueOf(editor.commit()));
+        MenuMaker.itUIDcounter = 0;
+
+        Log.i("Finished", getMethodName());
+    }
+
+    @Override
+    protected void onStart() {
+        Log.i("Started", getMethodName());
+        super.onStart();
+        Log.i("Finished", getMethodName());
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i("Started", getMethodName());
+        super.onResume();
+        Log.i("Finished", getMethodName());
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i("Started", getMethodName());
+        super.onDestroy();
+
+
+        Log.i("Finished", getMethodName());
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i("Started", getMethodName());
+        super.onStop();
+        if (mHandler != null) {
+            mHandler.removeCallbacks(mRunnable);
+        }
+
+        Log.i("Finished", getMethodName());
+    }
+
+    //Require tapping back twice to exit.  THanks to cousin W for idea.
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce = false;
+            }
+        }, 2000);
     }
 
     //Sets which menu list to use
@@ -122,6 +228,7 @@ public class MainActivity extends Activity {
             layoutEntry.setVisibility(GONE);
             layoutCon.setVisibility(VISIBLE);
         }
+        Log.i("Finished", getMethodName());
     }
 
     private void createOrderButtons() {
@@ -140,7 +247,7 @@ public class MainActivity extends Activity {
             orderButton.setText(mm.getCount() + " " + mm.getName() + "s: " + format.format((double) mm.getPrice() / 100));
             ordertracker.put(btID, mm.getUID());
 
-            ;
+            EODtracker.put(mm.getUID(), 0);
             orderButton.setTypeface(null, Typeface.BOLD);
             orderButton.setTextSize(16);
             orderButton.setVisibility(GONE);
@@ -231,6 +338,7 @@ public class MainActivity extends Activity {
                 }
             }
         }
+        Log.i("Finished", getMethodName());
     }
 
     public int updatetotal() {
@@ -244,8 +352,8 @@ public class MainActivity extends Activity {
         dtotal = total;
 
         txt.setText(format.format(dtotal / 100));
-        Log.i("Finished", getMethodName());
         refreshOrder();
+        Log.i("Finished", getMethodName());
         return total;
     }
 
@@ -266,13 +374,13 @@ public class MainActivity extends Activity {
             }
             child.invalidate();
         }
+        Log.i("Finished", getMethodName());
     }
 
 
     public void submitorder() {
 
         updatetotal();
-
 
         LayoutInflater layoutInflater = (LayoutInflater) getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
         View popupView = layoutInflater.inflate(R.layout.orderup, null);
@@ -296,6 +404,8 @@ public class MainActivity extends Activity {
         //linearLayout.setOrientation(LinearLayout.VERTICAL);
         boolean entryonly = true;
         for (MenuMaker mm : menulist) {
+            EODtracker.put(mm.getUID(), EODtracker.get(mm.getUID()) + mm.getCount());
+
             if (mm.getCount() > 0 && !mm.getType().equals("Entry")) {
                 orderButton = new Button(this);
                 orderButton.setId(bUID++ + 600);
@@ -340,6 +450,7 @@ public class MainActivity extends Activity {
         }
         Log.v("Order:", orderstring.toString());
         saveCSV("Orders.csv", orderstring.toString());
+        Log.i("Finished", getMethodName());
     }
 
 
@@ -373,16 +484,96 @@ public class MainActivity extends Activity {
     public void oCEntryMode(View v) {
         mode = 0;
         setmode();
-        //createMenuButtons();
 
         Log.i("Finished", getMethodName());
     }
 
     public void oCEOS(View v) {
+        EOS();
+
         Log.i("Finished", getMethodName());
     }
 
-//File handleing
+    public void ocEODFinalize(View v) {
+
+        StringBuilder orderstring = new StringBuilder(menulist.size() * 1 + 30);
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String formattedDate = df.format(c.getTime());
+
+        orderstring.append(formattedDate + ",");
+
+        for (int i = 0; i < menulist.size(); i++) {
+
+            orderstring.append(EODtracker.get(i) + ",");
+            //Reset EODtracker to 0
+            EODtracker.put(i, 0);
+        }
+
+        Log.v("Daily:", orderstring.toString());
+        saveCSV("Daily.csv", orderstring.toString());
+
+
+        popupWindow.dismiss();
+        Log.i("Finished", getMethodName());
+    }
+
+    public void ocEODBack(View v) {
+        popupWindow.dismiss();
+        Log.i("Finished", getMethodName());
+    }
+
+    private void EOS() {
+
+        LayoutInflater layoutInflater = (LayoutInflater) getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = layoutInflater.inflate(R.layout.eoddisplay, null);
+        popupWindow = new PopupWindow(popupView, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int height = size.y;
+        popupWindow.setWidth(width);
+        popupWindow.setHeight(height);
+        int Daytotal = 0;
+
+
+        Button orderButton;
+        int btID;
+        // Access LinearLayout element OrderButtonList
+
+
+        LinearLayout linearLayout = (LinearLayout) popupView.findViewById(R.id.llEODList);
+        //linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+        for (int i = 0; i < menulist.size(); i++) {
+
+            orderButton = new Button(this);
+            btID = orderButton.getId();
+
+            orderButton.setText(menulist.get(i).getName() + ": " + EODtracker.get(i));
+            Daytotal = Daytotal + menulist.get(i).getPrice() * EODtracker.get(i);
+            orderButton.setWidth(200);
+            orderButton.setTextSize(12);
+            orderButton.setVisibility(VISIBLE);
+            LayoutParams param = new LinearLayout.LayoutParams(200, LayoutParams.WRAP_CONTENT, 0);
+            linearLayout.addView(orderButton, param);
+
+
+        }
+        //WTF
+
+        TextView txt = (TextView) popupView.findViewById(R.id.EODTotal);
+
+        txt.setText(format.format(Daytotal / 100));
+
+        popupWindow.showAsDropDown(findViewById(R.id.posMain), 0, -1 * (height));
+
+        //saveCSV("EOD.csv",output);
+        Log.i("Finished", getMethodName());
+    }
+
+    //File handleing
 private void openItemsFile() {
 
     InputStream in = null;
@@ -425,7 +616,7 @@ private void openItemsFile() {
             }
     }
 
-
+    Log.i("Finished", getMethodName());
     }
 
     private void saveItemsFile() {
@@ -451,7 +642,7 @@ private void openItemsFile() {
 
             }
         }
-
+        Log.i("Finished", getMethodName());
 
     }
 
@@ -611,7 +802,9 @@ private void openItemsFile() {
         @Override
         public void onClick(View v) {
             //find menulist with menu ID of buttonID
-            menulist.get(menutracker.get(v.getId())).incCount();
+            int vid = v.getId();
+
+            menulist.get(menutracker.get(vid)).incCount();
 
             updatetotal();
 
@@ -661,7 +854,7 @@ private void openItemsFile() {
 
             oID = finaltracker.get(view.getId());
             Button bview = (Button) view;
-            bview.setText(menulist.get(oID).getName() + ": " + menulist.get(oID).getCount()); //todo
+            bview.setText(menulist.get(oID).getName() + ": " + menulist.get(oID).getCount());
 
             view.invalidate();
             ViewGroup layout = (ViewGroup) view.getParent();

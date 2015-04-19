@@ -3,8 +3,10 @@ package tech.travis.poolpos;
 /**
  * Created by travis on 3/26/15.
  */
+
+
 public class MenuMaker {
-    private static int itUIDcounter = 0;
+    static int itUIDcounter = 0;
     /**
      * Make an object with 3 properties, item Name, item Price, item flavors.  Also include UID hash
      * Public side much allow return of item Name, price, and possible flavors when given a UID, name or price

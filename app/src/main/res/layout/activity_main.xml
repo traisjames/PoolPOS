@@ -10,7 +10,7 @@
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="#ffdcdc00"
+        android:background="#ff636300"
         android:orientation="horizontal">
 
         <Button
@@ -42,9 +42,10 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
-            android:hint="End of Shift Reporter"
+            android:hint="Submit the End of Day Report"
             android:onClick="oCEOS"
-            android:text="End of Shift Report"/>
+            android:singleLine="true"
+            android:text="End of Day Report"/>
 
     </RelativeLayout>
 
@@ -63,7 +64,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
-            android:background="#ffff8b29"
+            android:background="#ff7e4514"
             android:orientation="vertical">
 
         </LinearLayout>
@@ -76,7 +77,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentStart="true"
             android:layout_marginRight="@dimen/TicketWidth"
-            android:background="#ffffc921"
+            android:background="#ff624d0d"
             android:orientation="vertical"/>
 
         <LinearLayout
@@ -107,7 +108,8 @@
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                >
 
                 <Button
                     android:id="@+id/btnCancel"
