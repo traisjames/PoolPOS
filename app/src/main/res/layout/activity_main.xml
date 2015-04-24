@@ -10,7 +10,6 @@
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:background="#ff636300"
         android:orientation="horizontal">
 
         <Button
@@ -28,10 +27,8 @@
             android:id="@+id/btnScreenCons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="110dp"
-            android:layout_marginTop="0dp"
+            android:layout_toEndOf="@+id/btnScreenFD"
             android:onClick="oCConessionMode"
             android:text="Concessions"/>
 
@@ -39,15 +36,20 @@
             android:id="@+id/btnScreenEOSR"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
-            android:hint="Submit the End of Day Report"
+            android:layout_toEndOf="@+id/btnScreenCons"
             android:onClick="oCEOS"
             android:singleLine="true"
             android:text="End of Day Report"/>
 
     </RelativeLayout>
+
+    <View
+        android:id="@+id/Divider3"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentEnd="true"
+        android:background="#ffffffff"/>
 
     <RelativeLayout
         android:layout_width="fill_parent"
@@ -57,59 +59,99 @@
         android:orientation="horizontal">
 
         <LinearLayout
-            android:id="@+id/MenuButtonLayoutEntry"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
+            android:id="@+id/MenuLayout"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_alignParentEnd="false"
             android:layout_alignParentStart="true"
-            android:layout_marginRight="@dimen/TicketWidth"
-            android:background="#ff7e4514"
+            android:layout_marginRight="5dp"
             android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/MenuButtonLayoutEntry"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginRight="@dimen/TicketWidth"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/MenuButtonLayoutConsessions"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginRight="@dimen/TicketWidth"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/Divider4"
+                android:layout_width="fill_parent"
+                android:layout_height="1dp  "
+                android:background="#ffffffff"
+                />
+
+            <TextView
+                android:id="@+id/txtStatus"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/footersize"
+                android:layout_alignParentStart="true"
+                android:layout_gravity="bottom"
+                android:layout_marginRight="@dimen/TicketWidth"
+                android:gravity="bottom|top"
+                android:text="Medium Text"
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
 
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/MenuButtonLayoutConsessions"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginRight="@dimen/TicketWidth"
-            android:background="#ff624d0d"
-            android:orientation="vertical"/>
-
-        <LinearLayout
             android:id="@+id/TicketLayout"
             android:layout_width="@dimen/TicketWidth"
-            android:layout_height="match_parent"
+            android:layout_height="fill_parent"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentStart="false"
             android:layout_alignParentTop="true"
-            android:background="#ff647e5d"
+            android:dividerPadding="2dp"
+            android:focusableInTouchMode="false"
             android:orientation="vertical"
-            android:weightSum="1">
+            android:weightSum="1"
+            >
 
             <ScrollView
 
                 android:id="@+id/OrderButtonLayout"
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="#ff2c6564">
+                android:layout_weight="1">
 
                 <LinearLayout
                     android:id="@+id/OrderButtonList"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
-                    android:orientation="vertical"></LinearLayout>
+                    android:orientation="vertical">
+
+                </LinearLayout>
             </ScrollView>
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 >
+
+                <View
+                    android:id="@+id/Divider2"
+                    android:layout_width="fill_parent"
+                    android:layout_height="1dp  "
+                    android:background="#ffffffff"/>
 
                 <Button
                     android:id="@+id/btnCancel"
@@ -144,24 +186,16 @@
                     android:onClick="oCsubmitorder"
                     android:text="Enter"/>
             </RelativeLayout>
+
         </LinearLayout>
 
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="#ffff0000">
-
-        <TextView
-            android:id="@+id/txtStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:text="Medium Text"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#ff000000"/>
+        <View
+            android:id="@+id/Divider"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_marginRight="@dimen/TicketWidth"
+            android:background="#ffffffff"/>
 
     </RelativeLayout>
 

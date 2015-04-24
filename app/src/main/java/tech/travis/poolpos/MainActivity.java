@@ -6,12 +6,15 @@ package tech.travis.poolpos;
  */
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
+import android.os.StrictMode;
 import android.util.Log;
 import android.util.Xml;
 import android.view.Display;
@@ -35,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,6 +46,8 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -59,9 +65,16 @@ Flavors are being ignored for now.
  */
 
 public class MainActivity extends Activity {
+    public static final int MESSAGE_DOWNLOAD_STARTED = 1000;
+    public static final int MESSAGE_DOWNLOAD_COMPLETE = 1001;
+    public static final int MESSAGE_UPDATE_PROGRESS_BAR = 1002;
+    public static final int MESSAGE_DOWNLOAD_CANCELED = 1003;
+    public static final int MESSAGE_CONNECTING_STARTED = 1004;
+    public static final int MESSAGE_ENCOUNTERED_ERROR = 1005;
     private static final String MAIN_PREFS = "";
     private static final String ns = null;
     final NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
+    final DateFormat dateFormat = new SimpleDateFormat("h:mm");
     int mode;
     private int bUID = 0;
     private HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
@@ -70,9 +83,7 @@ public class MainActivity extends Activity {
     private HashMap<Integer, Integer> EODtracker = new HashMap<Integer, Integer>();  //Key MMID,  value is count.D
     private ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     private Calendar c = Calendar.getInstance();
-
     private PopupWindow popupWindow;
-
     private boolean doubleBackToExitPressedOnce;
     private final Runnable mRunnable = new Runnable() {
         @Override
@@ -81,18 +92,205 @@ public class MainActivity extends Activity {
         }
     };
     private Handler mHandler;
+    private Timer myTimer;
+    private String stationID = "KDEH";
+    private WeatherParse weather = null;
+    private MainActivity thisActivity;
+    private Runnable Timer_Tick = new Runnable() {
+        public void run() {
+            StringBuilder statustext = new StringBuilder();
+
+            TextView txt = (TextView) findViewById(R.id.txtStatus);
+
+            //This method runs in the same thread as the UI.
+            //downloaderThread = new DownloaderThread(thisActivity, "http://weather.noaa.gov/pub/data/observations/metar/stations/KDEH.TXT");
+            //downloaderThread.start();
+
+            weather = new WeatherParse();
+
+            try {
+                weather.getweather(thisActivity, stationID);
+                ;
+                statustext.append("At " + dateFormat.format(weather.getTimeDate().getTime()) + ", ");
+                if (weather.getWeatherstatus().isEmpty()) {
+                    statustext.append("it was ");
+                } else {
+                    statustext.append("there was " + weather.getWeatherstatus() + ", with a temperature of ");
+                }
+                statustext.append(weather.getTempF() + "° ");
+                statustext.append("under " + weather.getClouds() + " skies.");
+
+                txt.setText(statustext.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+                txt.setText("Could not get weather infomation");
+
+            }
+            Log.i("Finished", getMethodName());
+        }
+    };
+    private Thread downloaderThread;
+    private ProgressDialog progressDialog;
+    /**
+     * This is the Handler for this activity. It will receive messages from the
+     * DownloaderThread and make the necessary updates to the UI.
+     */
+    public Handler activityHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                                /*
+                                 * Handling MESSAGE_UPDATE_PROGRESS_BAR:
+                                 * 1. Get the current progress, as indicated in the arg1 field
+                                 *    of the Message.
+                                 * 2. Update the progress bar.
+                                 */
+                case MESSAGE_UPDATE_PROGRESS_BAR:
+                    if (progressDialog != null) {
+                        int currentProgress = msg.arg1;
+                        progressDialog.setProgress(currentProgress);
+                    }
+                    break;
+
+                                /*
+                                 * Handling MESSAGE_CONNECTING_STARTED:
+                                 * 1. Get the URL of the file being downloaded. This is stored
+                                 *    in the obj field of the Message.
+                                 * 2. Create an indeterminate progress bar.
+                                 * 3. Set the message that should be sent if user cancels.
+                                 * 4. Show the progress bar.
+                                 */
+                case MESSAGE_CONNECTING_STARTED:
+                    if (msg.obj != null && msg.obj instanceof String) {
+                        String url = (String) msg.obj;
+                        // truncate the url
+                        if (url.length() > 16) {
+                            String tUrl = url.substring(0, 15);
+                            tUrl += "...";
+                            url = tUrl;
+                        }
+                        String pdTitle = "";
+                        String pdMsg = "";
+                        pdMsg += " " + url;
+
+                        dismissCurrentProgressDialog();
+                        progressDialog = new ProgressDialog(thisActivity);
+                        progressDialog.setTitle(pdTitle);
+                        progressDialog.setMessage(pdMsg);
+                        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                        progressDialog.setIndeterminate(true);
+                        // set the message to be sent when this dialog is canceled
+                        Message newMsg = Message.obtain(this, MESSAGE_DOWNLOAD_CANCELED);
+                        progressDialog.setCancelMessage(newMsg);
+                        progressDialog.show();
+                    }
+                    break;
+
+                                /*
+                                 * Handling MESSAGE_DOWNLOAD_STARTED:
+                                 * 1. Create a progress bar with specified max value and current
+                                 *    value 0; assign it to progressDialog. The arg1 field will
+                                 *    contain the max value.
+                                 * 2. Set the title and text for the progress bar. The obj
+                                 *    field of the Message will contain a String that
+                                 *    represents the name of the file being downloaded.
+                                 * 3. Set the message that should be sent if dialog is canceled.
+                                 * 4. Make the progress bar visible.
+                                 */
+                case MESSAGE_DOWNLOAD_STARTED:
+                    // obj will contain a String representing the file name
+                    if (msg.obj != null && msg.obj instanceof String) {
+                        int maxValue = msg.arg1;
+                        String fileName = (String) msg.obj;
+                        String pdTitle = "";
+                        String pdMsg = "";
+                        pdMsg += " " + fileName;
+
+                        dismissCurrentProgressDialog();
+                        progressDialog = new ProgressDialog(thisActivity);
+                        progressDialog.setTitle(pdTitle);
+                        progressDialog.setMessage(pdMsg);
+                        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                        progressDialog.setProgress(0);
+                        progressDialog.setMax(maxValue);
+                        // set the message to be sent when this dialog is canceled
+                        Message newMsg = Message.obtain(this, MESSAGE_DOWNLOAD_CANCELED);
+                        progressDialog.setCancelMessage(newMsg);
+                        progressDialog.setCancelable(true);
+                        progressDialog.show();
+                    }
+                    break;
+
+                                /*
+                                 * Handling MESSAGE_DOWNLOAD_COMPLETE:
+                                 * 1. Remove the progress bar from the screen.
+                                 * 2. Display Toast that says download is complete.
+                                 */
+                case MESSAGE_DOWNLOAD_COMPLETE:
+                    dismissCurrentProgressDialog();
+                    displayMessage("Done");
+                    break;
+
+                                /*
+                                 * Handling MESSAGE_DOWNLOAD_CANCELLED:
+                                 * 1. Interrupt the downloader thread.
+                                 * 2. Remove the progress bar from the screen.
+                                 * 3. Display Toast that says download is complete.
+                                 */
+                case MESSAGE_DOWNLOAD_CANCELED:
+                    if (downloaderThread != null) {
+                        downloaderThread.interrupt();
+                    }
+                    dismissCurrentProgressDialog();
+                    displayMessage("Cancelled");
+                    break;
+
+                                /*
+                                 * Handling MESSAGE_ENCOUNTERED_ERROR:
+                                 * 1. Check the obj field of the message for the actual error
+                                 *    message that will be displayed to the user.
+                                 * 2. Remove any progress bars from the screen.
+                                 * 3. Display a Toast with the error message.
+                                 */
+                case MESSAGE_ENCOUNTERED_ERROR:
+                    // obj will contain a string representing the error message
+                    if (msg.obj != null && msg.obj instanceof String) {
+                        String errorMessage = (String) msg.obj;
+                        dismissCurrentProgressDialog();
+                        displayMessage(errorMessage);
+                    }
+                    break;
+
+                default:
+                    // nothing to do here
+                    break;
+            }
+        }
+    };
 
     //Added for DEBUGGING
     public static String getMethodName() {
-        return Thread.currentThread().getStackTrace()[3].getMethodName();
+        return Thread.currentThread().getStackTrace()[3].getFileName() + " " + Thread.currentThread().getStackTrace()[3].getMethodName() + " at " + Thread.currentThread().getStackTrace()[3].getLineNumber();
+    }
+
+    public void ToastMessage(String message) {
+        if (message != null) {
+            Toast.makeText(thisActivity, message, Toast.LENGTH_SHORT).show();
+        }
     }
 
     //Application events
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         setContentView(R.layout.activity_main);
+
+        thisActivity = this;
+        downloaderThread = null;
+        progressDialog = null;
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
 
         openItemsFile();
         createMenuButtons();
@@ -109,30 +307,43 @@ public class MainActivity extends Activity {
             String[] EODR = EODRestore.split(",");
             EODtracker.clear();
             for (int i = 0; i < EODR.length; i++) {
-
-                EODtracker.put(i, Integer.parseInt(EODR[i]));
+                if (EODR[i] == null || EODR[i].equals("null")) {
+                    EODtracker.put(i, 0);
+                } else {
+                    EODtracker.put(i, Integer.parseInt(EODR[i]));
+                }
 
             }
         }
 
         mode = settings.getInt("Mode", 0);
         setmode();
+        stationID = settings.getString("Station", "KDEH");
+
+        myTimer = new Timer();
+        myTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                TimerMethod();
+
+            }
+
+        }, 100, 1000 * 60 * 15); //interval is in milliseconds.  * 1000 for seconds, * 60 for minute, * 15 for go every 15 minutes.
 
         Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onRestart() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
 
         super.onRestart();
         Log.i("Finished", getMethodName());
     }
 
-
     @Override
     protected void onPause() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         super.onPause();
 
         // We need an Editor object to make preference changes.
@@ -142,6 +353,7 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = settings.edit();
         //Store settings
         editor.putInt("Mode", mode);
+        editor.putString("Station", stationID);
 
 
         StringBuilder orderstring = new StringBuilder(EODtracker.size() * 1 + 30);
@@ -164,21 +376,21 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStart() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         super.onStart();
         Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onResume() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         super.onResume();
         Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onDestroy() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         super.onDestroy();
 
 
@@ -187,7 +399,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStop() {
-        Log.i("Started", getMethodName());
+        Log.i("Starting", getMethodName());
         super.onStop();
         if (mHandler != null) {
             mHandler.removeCallbacks(mRunnable);
@@ -258,7 +470,6 @@ public class MainActivity extends Activity {
 
         Log.i("Finished", getMethodName());
     }
-
 
     private void createMenuButtons() {
         ArrayList<MenuMaker> EntryList = new ArrayList<MenuMaker>();
@@ -377,7 +588,6 @@ public class MainActivity extends Activity {
         Log.i("Finished", getMethodName());
     }
 
-
     public void submitorder() {
 
         updatetotal();
@@ -453,7 +663,6 @@ public class MainActivity extends Activity {
         Log.i("Finished", getMethodName());
     }
 
-
     public void clearorder() {
         for (int i = 0; i < menulist.size(); i++) {
             menulist.get(i).resetCount();
@@ -462,7 +671,6 @@ public class MainActivity extends Activity {
         updatetotal();
         Log.i("Finished", getMethodName());
     }
-
 
     //XML created onclick listeners
     public void oCclearorder(View v) {
@@ -539,7 +747,6 @@ public class MainActivity extends Activity {
 
 
         Button orderButton;
-        int btID;
         // Access LinearLayout element OrderButtonList
 
 
@@ -549,7 +756,6 @@ public class MainActivity extends Activity {
         for (int i = 0; i < menulist.size(); i++) {
 
             orderButton = new Button(this);
-            btID = orderButton.getId();
 
             orderButton.setText(menulist.get(i).getName() + ": " + EODtracker.get(i));
             Daytotal = Daytotal + menulist.get(i).getPrice() * EODtracker.get(i);
@@ -561,7 +767,6 @@ public class MainActivity extends Activity {
 
 
         }
-        //WTF
 
         TextView txt = (TextView) popupView.findViewById(R.id.EODTotal);
 
@@ -574,56 +779,56 @@ public class MainActivity extends Activity {
     }
 
     //File handleing
-private void openItemsFile() {
+    private void openItemsFile() {
 
-    InputStream in = null;
-    File file = null;
-    if (isExternalStorageReadable()) {
-        //Find the directory for the SD Card using the API
-        //*Don't* hardcode "/sdcard"
-        File sdcard = Environment.getExternalStorageDirectory();
+        InputStream in = null;
+        File file = null;
+        if (isExternalStorageReadable()) {
+            //Find the directory for the SD Card using the API
+            //*Don't* hardcode "/sdcard"
+            File sdcard = Environment.getExternalStorageDirectory();
 
-        //Get the text file
-        file = new File(sdcard, "items.xml");
+            //Get the text file
+            file = new File(sdcard, "items.xml");
 
         }
 
-    try {
-        if (file.exists()) //check if xml is on sd card
-        {
-            //it does so use it
-            in = new BufferedInputStream(new FileInputStream(file));
-        } else {
-            //nope
-            in = getAssets().open("items.xml");
-        }
-
-        parse(in);
-
-    } catch (FileNotFoundException e) {
-        e.printStackTrace();
-    } catch (XmlPullParserException e) {
-        e.printStackTrace();
-    } catch (IOException e) {
-        e.printStackTrace();
-    } finally {
         try {
-            if (in != null) {
-                in.close();
-                }
+            if (file.exists()) //check if xml is on sd card
+            {
+                //it does so use it
+                in = new BufferedInputStream(new FileInputStream(file));
+            } else {
+                //nope
+                in = getAssets().open("items.xml");
+            }
+
+            parse(in);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (XmlPullParserException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-    }
+        }
 
-    Log.i("Finished", getMethodName());
+        Log.i("Finished", getMethodName());
     }
 
     private void saveItemsFile() {
     }
 
     private void saveCSV(String filename, String output) {
-
+        //todo define file header
         if (isExternalStorageWritable()) {
             try {
                 File sdcard = Environment.getExternalStorageDirectory();
@@ -789,7 +994,38 @@ private void openItemsFile() {
         }
     }
 
+    /**
+     * If there is a progress dialog, dismiss it and set progressDialog to
+     * null.
+     */
+    public void dismissCurrentProgressDialog() {
+        if (progressDialog != null) {
+            progressDialog.hide();
+            progressDialog.dismiss();
+            progressDialog = null;
+        }
+    }
+
     //Programicly created onclick listeners
+
+    /**
+     * Displays a message to the user, in the form of a Toast.
+     * @param message Message to be displayed.
+     */
+    public void displayMessage(String message) {
+        if (message != null) {
+            Toast.makeText(thisActivity, message, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void TimerMethod() {
+        //This method is called directly by the timer
+        //and runs in the same thread as the timer.
+
+        //We call the method that will work with the UI
+        //through the runOnUiThread method.
+        this.runOnUiThread(Timer_Tick);
+    }
 
     //Menu button click listener.  Runs when an item is selected to be ordered
     class POSListListener implements View.OnClickListener {
@@ -842,6 +1078,17 @@ private void openItemsFile() {
 
         public POSFinalOrderListener(int id) {
             buttonID = id;
+        }
+
+        /**
+         * Displays a message to the user, in the form of a Toast.
+         *
+         * @param message Message to be displayed.
+         */
+        public void displayMessage(String message) {
+            if (message != null) {
+                //Toast.makeText( ,message,Toast.LENGTH_SHORT);
+            }
         }
 
 

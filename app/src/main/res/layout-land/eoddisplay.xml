@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:alpha="0.9"
               android:background="@android:color/background_dark"
               android:orientation="horizontal">
 
@@ -11,15 +10,12 @@
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
         android:layout_gravity="left|top"
-        android:layout_marginBottom="30dp"
-        android:alpha="1"
-        android:background="#ff624d0d">
+        android:layout_marginBottom="30dp">
 
         <LinearLayout
             android:id="@+id/llEODList"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#ff3c003c"
             android:clickable="true"
             android:orientation="vertical">
         </LinearLayout>
@@ -42,7 +38,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
-            android:background="#ff3f0000"
             android:baselineAligned="false"
             android:orientation="horizontal">
 
