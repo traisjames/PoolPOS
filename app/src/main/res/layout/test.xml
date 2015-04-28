@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="horizontal">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:orientation="vertical">
+        <Button android:id="@+id/button8" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"
+            />
+        <Button android:id="@+id/button9" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"
+            />
+        <Button android:id="@+id/button10" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button11" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button12" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+    </LinearLayout>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:orientation="vertical">
+        <Button android:id="@+id/button" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"
+            />
+        <Button android:id="@+id/button2" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button3" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button4" style="@style/AppTheme"
+                android:layout_width="150dp" android:layout_height="150dp"
+                android:text="New Button"/>
+        <Button android:id="@+id/button5" style="@style/AppTheme"
+                android:layout_width="150dp" android:layout_height="150dp"
+                android:text="New Button"/>
+    </LinearLayout>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:orientation="vertical">
+        <Button android:id="@+id/button15" style="@style/AppTheme"
+                android:layout_width="150dp" android:layout_height="150dp"
+                android:text="New Button"/>
+        <Button android:id="@+id/button16" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button17" android:layout_width="150dp"
+                android:layout_height="150dp" android:text="New Button"/>
+        <Button android:id="@+id/button18" style="@style/AppTheme"
+                android:layout_width="150dp" android:layout_height="150dp"
+                android:text="New Button"/>
+        <Button android:id="@+id/button19" style="@style/AppTheme"
+                android:layout_width="150dp" android:layout_height="150dp"
+                android:text="New Button"/>
+    </LinearLayout>
+</LinearLayout>

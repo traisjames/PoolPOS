@@ -8,14 +8,14 @@ package tech.travis.poolpos;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Message;
 import android.os.StrictMode;
-import android.util.Log;
 import android.util.Xml;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -65,17 +66,12 @@ Flavors are being ignored for now.
  */
 
 public class MainActivity extends Activity {
-    public static final int MESSAGE_DOWNLOAD_STARTED = 1000;
-    public static final int MESSAGE_DOWNLOAD_COMPLETE = 1001;
-    public static final int MESSAGE_UPDATE_PROGRESS_BAR = 1002;
-    public static final int MESSAGE_DOWNLOAD_CANCELED = 1003;
-    public static final int MESSAGE_CONNECTING_STARTED = 1004;
-    public static final int MESSAGE_ENCOUNTERED_ERROR = 1005;
+
     private static final String MAIN_PREFS = "";
     private static final String ns = null;
-    final NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
-    final DateFormat dateFormat = new SimpleDateFormat("h:mm");
-    int mode;
+    private final NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
+    private final DateFormat dateFormat = new SimpleDateFormat("h:mm");
+    private int mode;
     private int bUID = 0;
     private HashMap<Integer, Integer> ordertracker = new HashMap<Integer, Integer>();  //Key order button ID,  value MM ID
     private HashMap<Integer, Integer> menutracker = new HashMap<Integer, Integer>();  //Key menu button ID,  value MM ID
@@ -84,6 +80,8 @@ public class MainActivity extends Activity {
     private ArrayList<MenuMaker> menulist = new ArrayList<MenuMaker>();
     private Calendar c = Calendar.getInstance();
     private PopupWindow popupWindow;
+
+
     private boolean doubleBackToExitPressedOnce;
     private final Runnable mRunnable = new Runnable() {
         @Override
@@ -91,26 +89,22 @@ public class MainActivity extends Activity {
             doubleBackToExitPressedOnce = false;
         }
     };
-    private Handler mHandler;
+
     private Timer myTimer;
     private String stationID = "KDEH";
     private WeatherParse weather = null;
-    private MainActivity thisActivity;
     private Runnable Timer_Tick = new Runnable() {
         public void run() {
             StringBuilder statustext = new StringBuilder();
 
             TextView txt = (TextView) findViewById(R.id.txtStatus);
 
-            //This method runs in the same thread as the UI.
-            //downloaderThread = new DownloaderThread(thisActivity, "http://weather.noaa.gov/pub/data/observations/metar/stations/KDEH.TXT");
-            //downloaderThread.start();
 
             weather = new WeatherParse();
 
-            try {
-                weather.getweather(thisActivity, stationID);
-                ;
+
+            boolean sucess = weather.getweather(stationID);
+            if (sucess) {
                 statustext.append("At " + dateFormat.format(weather.getTimeDate().getTime()) + ", ");
                 if (weather.getWeatherstatus().isEmpty()) {
                     statustext.append("it was ");
@@ -121,172 +115,46 @@ public class MainActivity extends Activity {
                 statustext.append("under " + weather.getClouds() + " skies.");
 
                 txt.setText(statustext.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-                txt.setText("Could not get weather infomation");
+            } else {
 
+                txt.setText("Could not get weather infomation");
             }
-            Log.i("Finished", getMethodName());
+
         }
     };
-    private Thread downloaderThread;
+    private MainActivity thisActivity;
     private ProgressDialog progressDialog;
+
     /**
      * This is the Handler for this activity. It will receive messages from the
      * DownloaderThread and make the necessary updates to the UI.
      */
-    public Handler activityHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                                /*
-                                 * Handling MESSAGE_UPDATE_PROGRESS_BAR:
-                                 * 1. Get the current progress, as indicated in the arg1 field
-                                 *    of the Message.
-                                 * 2. Update the progress bar.
-                                 */
-                case MESSAGE_UPDATE_PROGRESS_BAR:
-                    if (progressDialog != null) {
-                        int currentProgress = msg.arg1;
-                        progressDialog.setProgress(currentProgress);
-                    }
-                    break;
 
-                                /*
-                                 * Handling MESSAGE_CONNECTING_STARTED:
-                                 * 1. Get the URL of the file being downloaded. This is stored
-                                 *    in the obj field of the Message.
-                                 * 2. Create an indeterminate progress bar.
-                                 * 3. Set the message that should be sent if user cancels.
-                                 * 4. Show the progress bar.
-                                 */
-                case MESSAGE_CONNECTING_STARTED:
-                    if (msg.obj != null && msg.obj instanceof String) {
-                        String url = (String) msg.obj;
-                        // truncate the url
-                        if (url.length() > 16) {
-                            String tUrl = url.substring(0, 15);
-                            tUrl += "...";
-                            url = tUrl;
-                        }
-                        String pdTitle = "";
-                        String pdMsg = "";
-                        pdMsg += " " + url;
-
-                        dismissCurrentProgressDialog();
-                        progressDialog = new ProgressDialog(thisActivity);
-                        progressDialog.setTitle(pdTitle);
-                        progressDialog.setMessage(pdMsg);
-                        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-                        progressDialog.setIndeterminate(true);
-                        // set the message to be sent when this dialog is canceled
-                        Message newMsg = Message.obtain(this, MESSAGE_DOWNLOAD_CANCELED);
-                        progressDialog.setCancelMessage(newMsg);
-                        progressDialog.show();
-                    }
-                    break;
-
-                                /*
-                                 * Handling MESSAGE_DOWNLOAD_STARTED:
-                                 * 1. Create a progress bar with specified max value and current
-                                 *    value 0; assign it to progressDialog. The arg1 field will
-                                 *    contain the max value.
-                                 * 2. Set the title and text for the progress bar. The obj
-                                 *    field of the Message will contain a String that
-                                 *    represents the name of the file being downloaded.
-                                 * 3. Set the message that should be sent if dialog is canceled.
-                                 * 4. Make the progress bar visible.
-                                 */
-                case MESSAGE_DOWNLOAD_STARTED:
-                    // obj will contain a String representing the file name
-                    if (msg.obj != null && msg.obj instanceof String) {
-                        int maxValue = msg.arg1;
-                        String fileName = (String) msg.obj;
-                        String pdTitle = "";
-                        String pdMsg = "";
-                        pdMsg += " " + fileName;
-
-                        dismissCurrentProgressDialog();
-                        progressDialog = new ProgressDialog(thisActivity);
-                        progressDialog.setTitle(pdTitle);
-                        progressDialog.setMessage(pdMsg);
-                        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-                        progressDialog.setProgress(0);
-                        progressDialog.setMax(maxValue);
-                        // set the message to be sent when this dialog is canceled
-                        Message newMsg = Message.obtain(this, MESSAGE_DOWNLOAD_CANCELED);
-                        progressDialog.setCancelMessage(newMsg);
-                        progressDialog.setCancelable(true);
-                        progressDialog.show();
-                    }
-                    break;
-
-                                /*
-                                 * Handling MESSAGE_DOWNLOAD_COMPLETE:
-                                 * 1. Remove the progress bar from the screen.
-                                 * 2. Display Toast that says download is complete.
-                                 */
-                case MESSAGE_DOWNLOAD_COMPLETE:
-                    dismissCurrentProgressDialog();
-                    displayMessage("Done");
-                    break;
-
-                                /*
-                                 * Handling MESSAGE_DOWNLOAD_CANCELLED:
-                                 * 1. Interrupt the downloader thread.
-                                 * 2. Remove the progress bar from the screen.
-                                 * 3. Display Toast that says download is complete.
-                                 */
-                case MESSAGE_DOWNLOAD_CANCELED:
-                    if (downloaderThread != null) {
-                        downloaderThread.interrupt();
-                    }
-                    dismissCurrentProgressDialog();
-                    displayMessage("Cancelled");
-                    break;
-
-                                /*
-                                 * Handling MESSAGE_ENCOUNTERED_ERROR:
-                                 * 1. Check the obj field of the message for the actual error
-                                 *    message that will be displayed to the user.
-                                 * 2. Remove any progress bars from the screen.
-                                 * 3. Display a Toast with the error message.
-                                 */
-                case MESSAGE_ENCOUNTERED_ERROR:
-                    // obj will contain a string representing the error message
-                    if (msg.obj != null && msg.obj instanceof String) {
-                        String errorMessage = (String) msg.obj;
-                        dismissCurrentProgressDialog();
-                        displayMessage(errorMessage);
-                    }
-                    break;
-
-                default:
-                    // nothing to do here
-                    break;
-            }
-        }
-    };
 
     //Added for DEBUGGING
-    public static String getMethodName() {
+    private static String getMethodName() {
         return Thread.currentThread().getStackTrace()[3].getFileName() + " " + Thread.currentThread().getStackTrace()[3].getMethodName() + " at " + Thread.currentThread().getStackTrace()[3].getLineNumber();
     }
 
-    public void ToastMessage(String message) {
-        if (message != null) {
-            Toast.makeText(thisActivity, message, Toast.LENGTH_SHORT).show();
-        }
-    }
 
     //Application events
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
+
         setContentView(R.layout.activity_main);
 
+        View decorView = getWindow().getDecorView();
+        // Hide both the navigation bar and the status bar.
+        // SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
+        // a general rule, you should design your app to hide the status bar whenever you
+        // hide the navigation bar.
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
+
+
         thisActivity = this;
-        downloaderThread = null;
         progressDialog = null;
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
@@ -300,7 +168,7 @@ public class MainActivity extends Activity {
         SharedPreferences settings = getSharedPreferences(MAIN_PREFS, 0);
 
         String EODRestore = settings.getString("SavedEOD", "");
-        Log.i("Restoring", EODRestore);
+        //Log.i("Restoring", EODRestore);
 
 
         if (!EODRestore.isEmpty()) {
@@ -320,6 +188,10 @@ public class MainActivity extends Activity {
         setmode();
         stationID = settings.getString("Station", "KDEH");
 
+        //        View totalview = findViewById(R.id.totalview);
+        //        TextView status = (TextView) findViewById(R.id.txtStatus);
+        //        status.setHeight(totalview.getBottom() - totalview.getTop() - 1);
+
         myTimer = new Timer();
         myTimer.schedule(new TimerTask() {
             @Override
@@ -330,20 +202,20 @@ public class MainActivity extends Activity {
 
         }, 100, 1000 * 60 * 15); //interval is in milliseconds.  * 1000 for seconds, * 60 for minute, * 15 for go every 15 minutes.
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onRestart() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
 
         super.onRestart();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onPause() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         super.onPause();
 
         // We need an Editor object to make preference changes.
@@ -352,6 +224,7 @@ public class MainActivity extends Activity {
         SharedPreferences settings = getApplicationContext().getSharedPreferences(MAIN_PREFS, 0);
         SharedPreferences.Editor editor = settings.edit();
         //Store settings
+        myTimer.cancel();
         editor.putInt("Mode", mode);
         editor.putString("Station", stationID);
 
@@ -367,57 +240,57 @@ public class MainActivity extends Activity {
         editor.putString("SavedEOD", orderstring.toString());
 
         // Commit the edits!
-        Log.i("Commiting", orderstring.toString());
-        Log.i("Commiting", String.valueOf(editor.commit()));
+        //Log.i("Commiting", orderstring.toString());
+        //Log.i("Commiting", String.valueOf(editor.commit()));
         MenuMaker.itUIDcounter = 0;
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onStart() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         super.onStart();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onResume() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         super.onResume();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onDestroy() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         super.onDestroy();
 
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     @Override
     protected void onStop() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         super.onStop();
-        if (mHandler != null) {
-            mHandler.removeCallbacks(mRunnable);
-        }
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     //Require tapping back twice to exit.  THanks to cousin W for idea.
     @Override
     public void onBackPressed() {
+        if (!(popupWindow == null) && popupWindow.isShowing()) {
+            popupWindow.dismiss();
+        } else {
         if (doubleBackToExitPressedOnce) {
             super.onBackPressed();
             return;
         }
 
         this.doubleBackToExitPressedOnce = true;
-        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+            displayMessage("Please click BACK again to exit");
 
         new Handler().postDelayed(new Runnable() {
 
@@ -426,12 +299,13 @@ public class MainActivity extends Activity {
                 doubleBackToExitPressedOnce = false;
             }
         }, 2000);
+        }
     }
 
     //Sets which menu list to use
     private void setmode() {
         View layoutEntry = findViewById(R.id.MenuButtonLayoutEntry);
-        View layoutCon = findViewById(R.id.MenuButtonLayoutConsessions);
+        View layoutCon = findViewById(R.id.MenuButtonLayoutCon);
 
         if (mode == 0) {
             layoutEntry.setVisibility(VISIBLE);
@@ -440,7 +314,7 @@ public class MainActivity extends Activity {
             layoutEntry.setVisibility(GONE);
             layoutCon.setVisibility(VISIBLE);
         }
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void createOrderButtons() {
@@ -468,19 +342,19 @@ public class MainActivity extends Activity {
             linearLayout.addView(orderButton, param);
         }
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void createMenuButtons() {
         ArrayList<MenuMaker> EntryList = new ArrayList<MenuMaker>();
-        ArrayList<MenuMaker> ConsessionList = new ArrayList<MenuMaker>();
+        ArrayList<MenuMaker> ConcessionList = new ArrayList<MenuMaker>();
         LinearLayout layoutVertical;
         for (MenuMaker mm : menulist) {
 
             if (mm.getType().equals("Entry")) {
                 EntryList.add(mm);
             } else {
-                ConsessionList.add(mm);
+                ConcessionList.add(mm);
             }
         }
 
@@ -488,10 +362,10 @@ public class MainActivity extends Activity {
         layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayoutEntry);
         genMenuButtons(layoutVertical, EntryList);
 
-        layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayoutConsessions);
-        genMenuButtons(layoutVertical, ConsessionList);
+        layoutVertical = (LinearLayout) findViewById(R.id.MenuButtonLayoutCon);
+        genMenuButtons(layoutVertical, ConcessionList);
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void genMenuButtons(LinearLayout layoutVertical, ArrayList<MenuMaker> mml) {
@@ -511,8 +385,9 @@ public class MainActivity extends Activity {
         int count = x * y + 1;
         int counter;
         int btID;
+        float hsv[] = {0, 0, 0};
+        int itColor = R.color.lightgrey;
         String buttontext;
-
         //create order buttons
         out:
         for (int i = 0; i < y; i++) {
@@ -521,6 +396,9 @@ public class MainActivity extends Activity {
                 rowLayout.setWeightSum(x);
                 rowLayout.setBaselineAligned(false);
                 layoutVertical.addView(rowLayout);
+                LinearLayout.MarginLayoutParams lpt;
+                lpt = (LinearLayout.MarginLayoutParams) rowLayout.getLayoutParams();
+                lpt.setMargins(0, 5, 0, 0);
                 count = count - x;
             }
             for (int j = 0; j < x; j++) {
@@ -533,6 +411,18 @@ public class MainActivity extends Activity {
                     menutracker.put(btID, mml.get(counter).getUID());
                     buttontext = mml.get(counter).getName() + ": " + format.format((double) mml.get(counter).getPrice() / 100);
 
+                    //working here
+                    buttons[i][j].setBackgroundResource(R.drawable.custom_button);
+                    itColor = mml.get(counter).getItColor();
+                    if (itColor == 0) {
+                        //Log.i("In", getMethodName());
+                        Color.colorToHSV(Color.GRAY, hsv);
+                        //Log.i("Out", getMethodName());
+                    } else {
+                        Color.colorToHSV(itColor, hsv);
+                    }
+
+                    buttons[i][j].getBackground().setColorFilter(Color.HSVToColor(hsv), PorterDuff.Mode.MULTIPLY);
                     String pattern = "(\\w.+?\\s\\w.+?)\\s(\\w+)";
 
                     buttons[i][j].setText(buttontext.replaceAll(pattern, "$1\n$2"));
@@ -543,16 +433,19 @@ public class MainActivity extends Activity {
                     buttons[i][j].setHeight(max(height / (y + 1), LayoutParams.WRAP_CONTENT));
                     buttons[i][j].setOnClickListener(new POSListListener(counter));
                     rowLayout.addView(buttons[i][j]);
+                    ViewGroup.MarginLayoutParams lpt2;
+                    lpt2 = (ViewGroup.MarginLayoutParams) buttons[i][j].getLayoutParams();
+                    lpt2.setMargins(5, 0, 0, 0);
 
                 } else {
                     break out;
                 }
             }
         }
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
-    public int updatetotal() {
+    int updatetotal() {
 
         int total = 0;
         double dtotal;
@@ -564,7 +457,7 @@ public class MainActivity extends Activity {
 
         txt.setText(format.format(dtotal / 100));
         refreshOrder();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
         return total;
     }
 
@@ -585,10 +478,10 @@ public class MainActivity extends Activity {
             }
             child.invalidate();
         }
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
-    public void submitorder() {
+    void submitorder() {
 
         updatetotal();
 
@@ -646,88 +539,97 @@ public class MainActivity extends Activity {
         }
 
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void storeorder() {
         StringBuilder orderstring = new StringBuilder(menulist.size() * 1 + 30);
+        StringBuilder header = new StringBuilder(menulist.size() * 5 + 30);
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = df.format(c.getTime());
 
         orderstring.append(formattedDate + ",");
-        for (MenuMaker mm : menulist) {
-            orderstring.append(mm.getCount() + ",");
+        header.append("Time,");
+        for (int i = 0; i < menulist.size(); i++) {
+
+            orderstring.append(menulist.get(i).getCount() + ",");
+            header.append(menulist.get(i).getName() + ",");
         }
-        Log.v("Order:", orderstring.toString());
-        saveCSV("Orders.csv", orderstring.toString());
-        Log.i("Finished", getMethodName());
+        //Log.v("Order:", orderstring.toString());
+        saveCSV("Orders.csv", orderstring.toString(), header.toString());
+        //Log.i("Finished", getMethodName());
     }
 
-    public void clearorder() {
+    void clearorder() {
         for (int i = 0; i < menulist.size(); i++) {
             menulist.get(i).resetCount();
         }
 
         updatetotal();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     //XML created onclick listeners
     public void oCclearorder(View v) {
+
         clearorder();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     public void oCsubmitorder(View v) {
         submitorder();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
-    public void oCConessionMode(View v) {
+    public void oCConMode(View v) {
         mode = 1;
         setmode();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     public void oCEntryMode(View v) {
         mode = 0;
         setmode();
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     public void oCEOS(View v) {
         EOS();
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
+
 
     public void ocEODFinalize(View v) {
 
         StringBuilder orderstring = new StringBuilder(menulist.size() * 1 + 30);
+        StringBuilder header = new StringBuilder(menulist.size() * 5 + 30);
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String formattedDate = df.format(c.getTime());
 
         orderstring.append(formattedDate + ",");
+        header.append("Time,");
 
         for (int i = 0; i < menulist.size(); i++) {
 
             orderstring.append(EODtracker.get(i) + ",");
+            header.append(menulist.get(i).getName() + ",");
             //Reset EODtracker to 0
             EODtracker.put(i, 0);
         }
 
-        Log.v("Daily:", orderstring.toString());
-        saveCSV("Daily.csv", orderstring.toString());
+        //Log.v("Daily:", orderstring.toString());
+        saveCSV("Daily.csv", orderstring.toString(), header.toString());
 
 
         popupWindow.dismiss();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     public void ocEODBack(View v) {
         popupWindow.dismiss();
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void EOS() {
@@ -771,25 +673,23 @@ public class MainActivity extends Activity {
         TextView txt = (TextView) popupView.findViewById(R.id.EODTotal);
 
         txt.setText(format.format(Daytotal / 100));
-
+        //todo try clicking back while in a popup
         popupWindow.showAsDropDown(findViewById(R.id.posMain), 0, -1 * (height));
 
         //saveCSV("EOD.csv",output);
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     //File handleing
     private void openItemsFile() {
-
+        //Log.i("Starting", getMethodName());
         InputStream in = null;
         File file = null;
         if (isExternalStorageReadable()) {
-            //Find the directory for the SD Card using the API
-            //*Don't* hardcode "/sdcard"
-            File sdcard = Environment.getExternalStorageDirectory();
+
 
             //Get the text file
-            file = new File(sdcard, "items.xml");
+            file = new File(Environment.getExternalStorageDirectory(), "items.xml");
 
         }
 
@@ -798,18 +698,24 @@ public class MainActivity extends Activity {
             {
                 //it does so use it
                 in = new BufferedInputStream(new FileInputStream(file));
+                displayMessage("Opening XML from SD card");
+
             } else {
                 //nope
-                in = getAssets().open("items.xml");
+                //in = getAssets().open("itemsraw.xml");
+                in = new BufferedInputStream(this.getResources().openRawResource(R.raw.itemsraw));
+                displayMessage("Opening XML from local");
             }
-
             parse(in);
+
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (XmlPullParserException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -821,38 +727,43 @@ public class MainActivity extends Activity {
             }
         }
 
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     private void saveItemsFile() {
     }
 
-    private void saveCSV(String filename, String output) {
-        //todo define file header
+    private void saveCSV(String filename, String output, String header) {
+        //Log.i("Starting", getMethodName());
+        File gpxfile = null;
+        FileWriter writer = null;
         if (isExternalStorageWritable()) {
             try {
-                File sdcard = Environment.getExternalStorageDirectory();
-                if (!sdcard.exists()) {
-                    Log.i("File", "Creating New");
-                    sdcard.createNewFile();
+
+                gpxfile = new File(Environment.getExternalStorageDirectory(), filename);
+                if (!gpxfile.exists()) {
+                    //Log.i("File", "Creating New");
+
+                    writer = new FileWriter(gpxfile, true);
+                    writer.append(header + "\n");
+                } else {
+                    writer = new FileWriter(gpxfile, true);
                 }
-                File gpxfile = new File(sdcard, filename);
-                FileWriter writer = new FileWriter(gpxfile, true);
+
                 writer.append(output + "\n");
                 writer.flush();
                 writer.close();
-                Log.i("File", "Write complete");
             } catch (IOException e) {
                 e.printStackTrace();
-
+                displayMessage("Error saving file");
             }
         }
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
 
     }
 
     /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
+    boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             return true;
@@ -861,7 +772,7 @@ public class MainActivity extends Activity {
     }
 
     /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
+    boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
             return true;
@@ -869,20 +780,21 @@ public class MainActivity extends Activity {
         return false;
     }
 
+
     //XML parsing
-    public List parse(InputStream in) throws XmlPullParserException, IOException {
-        try {
-            XmlPullParser parser = Xml.newPullParser();
-            parser.setFeature(FEATURE_PROCESS_NAMESPACES, false);
-            parser.setInput(in, null);
-            parser.nextTag();
-            return readFeed(parser);
-        } finally {
-            in.close();
-        }
+    List parse(InputStream in) throws XmlPullParserException, IOException {
+
+        XmlPullParser parser = Xml.newPullParser();
+        parser.setFeature(FEATURE_PROCESS_NAMESPACES, false);
+        parser.setInput(in, null);
+        parser.nextTag();
+        return readFeed(parser);
+
     }
 
+
     private List readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
+        //Log.i("Starting", getMethodName());
         List entries = new ArrayList();
 
         parser.require(START_TAG, ns, "Document");
@@ -898,12 +810,14 @@ public class MainActivity extends Activity {
                 skip(parser);
             }
         }
+        //Log.i("Finished", getMethodName());
         return entries;
     }
 
     // Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them off
     // to their respective "read" methods for processing. Otherwise, skips the tag.
     private MenuMaker readEntry(XmlPullParser parser) throws XmlPullParserException, IOException {
+        //Log.i("Starting", getMethodName());
         parser.require(START_TAG, ns, "Item");
 
         String itName = null;
@@ -911,6 +825,7 @@ public class MainActivity extends Activity {
         String itType = null;
         String itFlavor = "";
         String tmpFlavor = "";
+        int itColor = 0;
 
         while (parser.next() != END_TAG) {
             if (parser.getEventType() != START_TAG) {
@@ -919,10 +834,13 @@ public class MainActivity extends Activity {
             String name = parser.getName();
             if (name.equals("Item_Name")) {
                 itName = readName(parser);
+                //Log.i("Got", itName);
             } else if (name.equals("Price")) {
                 itPrice = readPrice(parser);
             } else if (name.equals("Type")) {
                 itType = readType(parser);
+            } else if (name.equals("Color")) {
+                itColor = readColor(parser);
             } else if (name.equals("Flavor")) {
                 tmpFlavor = readFlavors(parser);
                 if (!tmpFlavor.isEmpty()) {
@@ -932,39 +850,90 @@ public class MainActivity extends Activity {
                 skip(parser);
             }
         }
-        return new MenuMaker(itName, itPrice, itFlavor, itType);
+        //Log.i("Finished", getMethodName());
+        return new MenuMaker(itName, itPrice, itFlavor, itType, itColor);
     }
 
     // Processes Item_Name tags in the feed.
     private String readName(XmlPullParser parser) throws IOException, XmlPullParserException {
+        //Log.i("Starting", getMethodName());
         parser.require(START_TAG, ns, "Item_Name");
         String text = readText(parser);
         parser.require(END_TAG, ns, "Item_Name");
+        //Log.i("Finished", getMethodName());
         return text;
     }
 
     // Processes Price tags in the feed.
     private int readPrice(XmlPullParser parser) throws IOException, XmlPullParserException {
+        //Log.i("Starting", getMethodName());
         parser.require(START_TAG, ns, "Price");
         String text = readText(parser);
         parser.require(END_TAG, ns, "Price");
+        //Log.i("Finished", getMethodName());
         return Integer.parseInt(text);
     }
 
     // Processes Type tags in the feed.
     private String readType(XmlPullParser parser) throws IOException, XmlPullParserException {
+        //Log.i("Starting", getMethodName());
         parser.require(START_TAG, ns, "Type");
         String text = readText(parser);
         parser.require(END_TAG, ns, "Type");
+        //Log.i("Finished", getMethodName());
         return text;
     }
 
     // Processes Flavor tags in the feed.
     private String readFlavors(XmlPullParser parser) throws IOException, XmlPullParserException {
+        //Log.i("Starting", getMethodName());
         parser.require(START_TAG, ns, "Flavor");
         String text = readText(parser);
         parser.require(END_TAG, ns, "Flavor");
+        //Log.i("Finished", getMethodName());
         return text;
+    }
+
+    public int getColorValueByResourceName(String name) {
+        int color = 0;
+        int color2 = 0;
+        if (name == null || name.equalsIgnoreCase("") || name.equalsIgnoreCase("null")) {
+            return 0;
+        }
+
+        try {
+            Class res = R.color.class;
+            Field field = res.getField(name);
+            color = getResources().getColor(field.getInt(null));
+            color2 = Color.rgb(0, 128, 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return color;
+    }
+
+    private int readColor(XmlPullParser parser) throws IOException, XmlPullParserException {
+        //Log.i("Starting", getMethodName());
+        parser.require(START_TAG, ns, "Color");
+        String text = readText(parser).toLowerCase();
+        parser.require(END_TAG, ns, "Color");
+        int color;
+        if (!text.isEmpty()) {
+            try {
+
+
+                color = getColorValueByResourceName(text);
+
+
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+                color = 0;
+            }
+        } else {
+            color = 0;
+        }
+        //Log.i("Finished", getMethodName());
+        return color;
     }
 
     // For the tags title and summary, extracts their text values.
@@ -994,22 +963,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    /**
-     * If there is a progress dialog, dismiss it and set progressDialog to
-     * null.
-     */
-    public void dismissCurrentProgressDialog() {
-        if (progressDialog != null) {
-            progressDialog.hide();
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
-    }
-
     //Programicly created onclick listeners
 
     /**
      * Displays a message to the user, in the form of a Toast.
+     *
      * @param message Message to be displayed.
      */
     public void displayMessage(String message) {
@@ -1044,7 +1002,7 @@ public class MainActivity extends Activity {
 
             updatetotal();
 
-            Log.i("Finished", getMethodName());
+            //Log.i("Finished", getMethodName());
         }
     }
 
@@ -1060,13 +1018,13 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            Log.v("Removing", "Button: " + buttonID);
+            //Log.v("Removing", "Button: " + buttonID);
 
             menulist.get(ordertracker.get(buttonID)).decCount();
 
 
             updatetotal();
-            Log.i("Finished", getMethodName());
+            //Log.i("Finished", getMethodName());
         }
 
     }
@@ -1080,22 +1038,11 @@ public class MainActivity extends Activity {
             buttonID = id;
         }
 
-        /**
-         * Displays a message to the user, in the form of a Toast.
-         *
-         * @param message Message to be displayed.
-         */
-        public void displayMessage(String message) {
-            if (message != null) {
-                //Toast.makeText( ,message,Toast.LENGTH_SHORT);
-            }
-        }
-
 
         @Override
         public void onClick(View view) {
             int oID;
-            Log.v("Removing", "Button: " + buttonID);
+            //Log.v("Removing", "Button: " + buttonID);
 
             menulist.get(finaltracker.get(buttonID)).decCount();
 
@@ -1111,7 +1058,7 @@ public class MainActivity extends Activity {
                     layout.removeView(view);
                 }
             }
-            Log.v("Child count", layout.getChildCount() + "");
+            //Log.v("Child count", layout.getChildCount() + "");
             //May be sinning here but it works:
             if (layout.getChildCount() == 0) {
 
@@ -1123,13 +1070,13 @@ public class MainActivity extends Activity {
 
             }
 
-            Log.i("Finished", getMethodName());
+            //Log.i("Finished", getMethodName());
         }
 
     }
 
     //add new item method
-    class ButtonAddNewItem implements View.OnClickListener {
+    private class ButtonAddNewItem implements View.OnClickListener {
 
         @Override
         public void onClick(View view) {
@@ -1137,7 +1084,7 @@ public class MainActivity extends Activity {
             int itemPrice = 0;
             String itemFlavors = "";
             //orderlist.add(new MenuMaker(itemName, itemPrice, itemFlavors));
-            Log.i("Finished", getMethodName());
+            //Log.i("Finished", getMethodName());
         }
 
     }

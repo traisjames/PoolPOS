@@ -1,7 +1,6 @@
 package tech.travis.poolpos;
 
 import android.os.Message;
-import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -10,12 +9,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 
-public class DownloaderThread extends Thread {
+class DownloaderThread extends Thread {
     // constants
     private static final int DOWNLOAD_BUFFER_SIZE = 4096;
-    StringBuffer txtfile = new StringBuffer();
+    private StringBuffer txtfile = new StringBuffer();
     // instance variables
-    private MainActivity parentActivity;
+
     private String downloadUrl;
 
     /**
@@ -25,17 +24,16 @@ public class DownloaderThread extends Thread {
      * @param inUrl            String representing the URL of the file to be downloaded.
      */
     public DownloaderThread(MainActivity inParentActivity, String inUrl) {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         downloadUrl = "";
         if (inUrl != null) {
             downloadUrl = inUrl;
         }
-        parentActivity = inParentActivity;
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
     }
 
     //Added for DEBUGGING
-    public static String getMethodName() {
+    private static String getMethodName() {
         return Thread.currentThread().getStackTrace()[3].getFileName() + " " + Thread.currentThread().getStackTrace()[3].getMethodName() + " at " + Thread.currentThread().getStackTrace()[3].getLineNumber();
 
     }
@@ -51,7 +49,7 @@ public class DownloaderThread extends Thread {
      */
     @Override
     public void run() {
-        Log.i("Starting", getMethodName());
+        //Log.i("Starting", getMethodName());
         URL url;
         URLConnection conn;
         BufferedInputStream inStream;
@@ -72,16 +70,16 @@ public class DownloaderThread extends Thread {
             inStream = new BufferedInputStream(conn.getInputStream());
 
             byte[] data = new byte[DOWNLOAD_BUFFER_SIZE];
-            int bytesRead = 0;
+            int bytesRead;
 
             while (!isInterrupted() && (bytesRead = inStream.read(data, 0, data.length)) >= 0) {
                 txtfile.append(new String(data, 0, bytesRead));
-                Log.i("Looping", new String(data, 0, bytesRead));
+                //Log.i("Looping", new String(data, 0, bytesRead));
             }
 
             inStream.close();
 
-            Log.i("Finished", getMethodName());
+            //Log.i("Finished", getMethodName());
             return;
         } catch (MalformedURLException e) {
             errMsg = "Bad URL";
@@ -98,13 +96,13 @@ public class DownloaderThread extends Thread {
             errMsg = "General Error Message";
             e.printStackTrace();
         }
-        Log.i("Errored", errMsg);
+        //Log.i("Errored", errMsg);
     }
 
 
     //    public void runToFile()
     //    {
-    //        Log.i("Starting", getMethodName());
+    //        //Log.i("Starting", getMethodName());
     //        URL url;
     //        URLConnection conn;
     //        int fileSize, lastSlash;
@@ -154,7 +152,7 @@ public class DownloaderThread extends Thread {
     //            while(!isInterrupted() && (bytesRead = inStream.read(data, 0, data.length)) >= 0)
     //            {
     //                txtfile.append(new String(data,0,bytesRead));
-    //                Log.i("Looping", new String(data,0,bytesRead));
+    //                //Log.i("Looping", new String(data,0,bytesRead));
     //                //                outStream.write(data, 0, bytesRead);
     //                // update progress bar
     //                totalRead += bytesRead;
@@ -166,7 +164,7 @@ public class DownloaderThread extends Thread {
     //            //            outStream.close();
     //            //            fileStream.close();
     //            inStream.close();
-    //            Log.i("Closed", getMethodName());
+    //            //Log.i("Closed", getMethodName());
     //            if(isInterrupted())
     //            {
     //                // the download was canceled, so let's delete the partially downloaded file
@@ -179,7 +177,7 @@ public class DownloaderThread extends Thread {
     //                        MainActivity.MESSAGE_DOWNLOAD_COMPLETE);
     //                parentActivity.activityHandler.sendMessage(msg);*/
     //            }
-    //            Log.i("Finished", getMethodName());
+    //            //Log.i("Finished", getMethodName());
     //            return;
     //        }
     //        catch(MalformedURLException e)
@@ -217,6 +215,6 @@ public class DownloaderThread extends Thread {
     //            parentActivity.activityHandler.sendMessage(msg);*/
     //            e.printStackTrace();
     //        }
-    //        Log.i("Errored", getMethodName());
+    //        //Log.i("Errored", getMethodName());
     //    }
 }

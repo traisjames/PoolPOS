@@ -45,8 +45,9 @@
                 android:id="@+id/textView5"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingEnd="10dp"
                 android:singleLine="false"
-                android:text="Box profit:"
+                android:text="@string/Profits"
                 android:textAppearance="?android:attr/textAppearanceLarge"/>
 
             <TextView
@@ -54,8 +55,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
-                android:text="$###.##"
-                android:textAppearance="?android:attr/textAppearanceLarge"/>
+                android:paddingEnd="10dp"
+                android:paddingStart="10dp"
+                android:text="$###.##" android:textAppearance="?android:attr/textAppearanceLarge"/>
         </LinearLayout>
 
         <Button
@@ -64,15 +66,19 @@
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:onClick="ocEODFinalize"
-            android:text="Finalize Report"/>
+            android:text="@string/SaveReport"/>
 
+        <Space
+            android:layout_width="20px"
+            android:layout_height="20px"
+            />
         <Button
-            android:id="@+id/button"
+            android:id="@+id/btnBack"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:onClick="ocEODBack"
-            android:text="Back"/>
+            android:text="@string/Back"/>
     </LinearLayout>
 
 </LinearLayout>

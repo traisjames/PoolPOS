@@ -5,7 +5,7 @@ package tech.travis.poolpos;
  */
 
 
-public class MenuMaker {
+class MenuMaker {
     static int itUIDcounter = 0;
     /**
      * Make an object with 3 properties, item Name, item Price, item flavors.  Also include UID hash
@@ -18,6 +18,8 @@ public class MenuMaker {
     private int itUID = 0;
     private int itCount = 0;
     private String itType = "NA";
+    private int itColor = 0;
+
 
     //constructor
     public MenuMaker() {
@@ -27,19 +29,11 @@ public class MenuMaker {
         this.itCount = 0;
         this.itType = "NA";
         this.itUID = itUIDcounter++;
+        this.itColor = 0;
     }
 
-    //With no item count, used for initilization
-    public MenuMaker(String itemname, int itemprice, String[] itemFlavors, String itemtype) {
-        itName = itemname;
-        itPrice = itemprice;
-        itFlavors = itemFlavors;
-        itType = itemtype;
-        this.itCount = 0;
-        itUID = itUIDcounter++;
-    }
 
-    public MenuMaker(String itemname, int itemprice, String itemFlavors, String itemtype) {
+    public MenuMaker(String itemname, int itemprice, String itemFlavors, String itemtype, int itemcolor) {
 
         itName = itemname;
         itPrice = itemprice;
@@ -47,27 +41,14 @@ public class MenuMaker {
         itType = itemtype;
         this.itCount = 0;
         itUID = itUIDcounter++;
-    }
-
-    public MenuMaker(String itemname, int itemprice, String[] itemFlavors, int itemCount, String itemtype) {
-        itName = itemname;
-        itPrice = itemprice;
-        itFlavors = itemFlavors;
-        this.itCount = itemCount;
-        itType = itemtype;
-        itUID = itUIDcounter++;
-    }
-
-    public MenuMaker(String itemname, int itemprice, String itemFlavors, int itemCount, String itemtype) {
-        itName = itemname;
-        itPrice = itemprice;
-        itFlavors = parseFlavors(itemFlavors);
-        itType = itemtype;
-        this.itCount = itemCount;
-        itUID = itUIDcounter++;
+        itColor = itemcolor;
 
     }
 
+
+    public int getItColor() {
+        return itColor;
+    }
 
     public String getName() {
         return itName;

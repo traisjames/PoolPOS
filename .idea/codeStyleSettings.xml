@@ -31,9 +31,6 @@
           </value>
         </option>
         <option name="RIGHT_MARGIN" value="100" />
-        <AndroidXmlCodeStyleSettings>
-          <option name="USE_CUSTOM_SETTINGS" value="true" />
-        </AndroidXmlCodeStyleSettings>
         <DBN-PSQL>
           <case-options enabled="false">
             <option name="KEYWORD_CASE" value="lower" />

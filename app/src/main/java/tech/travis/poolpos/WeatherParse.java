@@ -2,7 +2,6 @@ package tech.travis.poolpos;
 
 
 import android.app.ProgressDialog;
-import android.util.Log;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -25,7 +24,7 @@ import static org.xmlpull.v1.XmlPullParser.TEXT;
 /**
  * Created by travis on 4/18/15.
  */
- /*
+/*
  Retreve from ftp://tgftp.nws.noaa.gov/data/observations/metar/stations/KDEH.TXT:
  2015/04/19 03:55
  KDEH 190355Z AUTO 16005KT 10SM BKN060 OVC070 16/03 A2994 RMK AO2
@@ -36,7 +35,7 @@ import static org.xmlpull.v1.XmlPullParser.TEXT;
  Day of month: 19
  Time: 03:55 UTC
  Report is fully automated, with no human intervention or oversight
- Wind:  True direction = 160 degrees, Speed: 5 knots
+ Wind: True direction = 160 degrees, Speed: 5 knots
  Visibility: 10 Statute Miles
  Clouds: Broken sky , at 6000 feet above aerodrome level
  Clouds: Overcast sky , at 7000 feet above aerodrome level
@@ -53,7 +52,7 @@ watchs and warnings.
 
 
 
-public class WeatherParse {
+class WeatherParse {
     public static final int MESSAGE_DOWNLOAD_STARTED = 1000;
     public static final int MESSAGE_DOWNLOAD_COMPLETE = 1001;
     public static final int MESSAGE_UPDATE_PROGRESS_BAR = 1002;
@@ -61,7 +60,6 @@ public class WeatherParse {
     public static final int MESSAGE_CONNECTING_STARTED = 1004;
     public static final int MESSAGE_ENCOUNTERED_ERROR = 1005;
     private static final String ns = null;
-    private final String ftpsite = "http://weather.noaa.gov/pub/data/observations/metar/stations/";
     private int temp;
     private int dp;
     private int cloudc;
@@ -81,7 +79,7 @@ public class WeatherParse {
     private ProgressDialog progressDialog;
 
     //Added for DEBUGGING
-    public static String getMethodName() {
+    private static String getMethodName() {
         return Thread.currentThread().getStackTrace()[3].getFileName() + " " + Thread.currentThread().getStackTrace()[3].getMethodName() + " at " + Thread.currentThread().getStackTrace()[3].getLineNumber();
 
     }
@@ -172,35 +170,36 @@ public class WeatherParse {
         return c;
     }
 
-    public String getweather(MainActivity inParentActivity) throws IOException {
-        return getweather(inParentActivity, station);
-    }
 
-    public String getweather(MainActivity inParentActivity, String stationID) throws IOException {
+    public boolean getweather(String stationID) {
 
 
-        Log.i("Starting", getMethodName());
-        String metarstring = "";
+        //Log.i("Starting", getMethodName());
+        String metarstring;
+        String ftpsite = "http://weather.noaa.gov/pub/data/observations/metar/stations/";
         String weird = ftpsite + stationID.toUpperCase() + ".TXT";
         DownloaderThread downloaderThread = new DownloaderThread(thisActivity, weird);
         downloaderThread.start();
 
         while (downloaderThread.getTxtfile().equals("")) {
             try {
-                Log.i("Waiting", getMethodName());
+                //Log.i("Waiting", getMethodName());
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
-                Log.e("Wait Fail", getMethodName());
+                //Log.e("Wait Fail", getMethodName());
                 e.printStackTrace();
             }
         }
         metarstring = downloaderThread.getTxtfile();
+        if (!metarstring.isEmpty()) {
+            metar_decode(metarstring);
 
-        metar_decode(metarstring);
 
-
-        Log.i("Finished", getMethodName());
-        return "success";
+            //Log.i("Finished", getMethodName());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean is_num_digit(char ch) {
@@ -279,7 +278,7 @@ public class WeatherParse {
              }
              }
 
-             add_output.append("\\n");  return add_output.toString();*/
+             add_output.append("\\n"); return add_output.toString();*/
             return;
         }
 
@@ -394,7 +393,7 @@ public class WeatherParse {
          {
          // Single value
          if( (!myArray[3].isEmpty()) &&
-         (!myArray[4].isEmpty())    )
+         (!myArray[4].isEmpty()) )
          {
          if(myArray[3].equals("P")) add_output.append("more than ");
          else if(myArray[3].equals("M")) add_output.append("less than ");
@@ -415,7 +414,7 @@ public class WeatherParse {
         /** // Check if token is CAVOK
          if(token.equals("CAVOK"))
          {
-         add_output.append("CAVOK conditions: Visibility 10 km or more,\\n    no cloud below 5.000 feet or below the MSA (whichever is greater), \\n    no cumulonimbus, and no significant weather fenomena in\\n    the aerodrome or its vicinity\\n");
+         add_output.append("CAVOK conditions: Visibility 10 km or more,\\n no cloud below 5.000 feet or below the MSA (whichever is greater), \\n no cumulonimbus, and no significant weather fenomena in\\n the aerodrome or its vicinity\\n");
          return add_output.toString();
          }
 
@@ -529,51 +528,51 @@ public class WeatherParse {
         }
 
 
-        /*// Check if token is recent weather observation
-        Pattern reREWX = Pattern.compile("^RE(\\-|\\+)?(VC)?(MI|BC|BL|SH|TS|FZ|PR)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)?$");
+ /*// Check if token is recent weather observation
+ Pattern reREWX = Pattern.compile("^RE(\\-|\\+)?(VC)?(MI|BC|BL|SH|TS|FZ|PR)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS)?(DZ|RA|SN|SG|IC|PL|GR|GS|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)?$");
  Matcher mreREWX = reREWX.matcher(token);
-        if(mreREWX.matches())
-        {
-            add_output.append("Since the previous observation (but not at present), the following\\nmeteorological phenomena were observed: ");
-            //String myArray = reREWX.exec(token);
-            for(int i=1;i<myArray.length; i++)
-            {
-                if(myArray[i].equals("-")) add_output.append("Light ");
-                if(myArray[i].equals("+")) add_output.append("Strong ");
-                if(myArray[i].equals("VC")) add_output.append("In the vicinity, ");
-                if(myArray[i].equals("MI")) add_output.append("Shallow ");
-                if(myArray[i].equals("BC")) add_output.append("Patches of ");
-                if(myArray[i].equals("SH")) add_output.append("Showers of ");
-                if(myArray[i].equals("TS")) add_output.append("Thunderstorms ");
-                if(myArray[i].equals("FZ")) add_output.append("Freezing (or super-cooled) ");
-                if(myArray[i].equals("PR")) add_output.append("Partial ");
-                if(myArray[i].equals("DZ")) add_output.append("Drizzle ");
-                if(myArray[i].equals("RA")) add_output.append("Rain ");
-                if(myArray[i].equals("SN")) add_output.append("Snow ");
-                if(myArray[i].equals("SG")) add_output.append("Snow grains ");
-                if(myArray[i].equals("IC")) add_output.append("Ice Crystals ");
-                if(myArray[i].equals("PL")) add_output.append("Ice Pellets ");
-                if(myArray[i].equals("GR")) add_output.append("Hail ");
-                if(myArray[i].equals("GS")) add_output.append("Small hail (< 5 mm diameter) and/or snow pellets ");
-                if(myArray[i].equals("BR")) add_output.append("Mist ");
-                if(myArray[i].equals("FG")) add_output.append("Fog ");
-                if(myArray[i].equals("FU")) add_output.append("Smoke ");
-                if(myArray[i].equals("VA")) add_output.append("Volcanic Ash ");
-                if(myArray[i].equals("DU")) add_output.append("Widespread dust ");
-                if(myArray[i].equals("SA")) add_output.append("Sand ");
-                if(myArray[i].equals("HZ")) add_output.append("Haze ");
-                if(myArray[i].equals("PO")) add_output.append("Dust/Sand whirls ");
-                if(myArray[i].equals("SQ")) add_output.append("Squall ");
-                if(myArray[i].equals("FC")) add_output.append("Funnel clouds ");
-                if(myArray[i].equals("SS")) add_output.append("Sandstorm ");
-                if(myArray[i].equals("DS")) add_output.append("Duststorm ");
-            }
-            add_output.append("\\n"); return add_output.toString();
-        }*/
+ if(mreREWX.matches())
+ {
+ add_output.append("Since the previous observation (but not at present), the following\\nmeteorological phenomena were observed: ");
+ //String myArray = reREWX.exec(token);
+ for(int i=1;i<myArray.length; i++)
+ {
+ if(myArray[i].equals("-")) add_output.append("Light ");
+ if(myArray[i].equals("+")) add_output.append("Strong ");
+ if(myArray[i].equals("VC")) add_output.append("In the vicinity, ");
+ if(myArray[i].equals("MI")) add_output.append("Shallow ");
+ if(myArray[i].equals("BC")) add_output.append("Patches of ");
+ if(myArray[i].equals("SH")) add_output.append("Showers of ");
+ if(myArray[i].equals("TS")) add_output.append("Thunderstorms ");
+ if(myArray[i].equals("FZ")) add_output.append("Freezing (or super-cooled) ");
+ if(myArray[i].equals("PR")) add_output.append("Partial ");
+ if(myArray[i].equals("DZ")) add_output.append("Drizzle ");
+ if(myArray[i].equals("RA")) add_output.append("Rain ");
+ if(myArray[i].equals("SN")) add_output.append("Snow ");
+ if(myArray[i].equals("SG")) add_output.append("Snow grains ");
+ if(myArray[i].equals("IC")) add_output.append("Ice Crystals ");
+ if(myArray[i].equals("PL")) add_output.append("Ice Pellets ");
+ if(myArray[i].equals("GR")) add_output.append("Hail ");
+ if(myArray[i].equals("GS")) add_output.append("Small hail (< 5 mm diameter) and/or snow pellets ");
+ if(myArray[i].equals("BR")) add_output.append("Mist ");
+ if(myArray[i].equals("FG")) add_output.append("Fog ");
+ if(myArray[i].equals("FU")) add_output.append("Smoke ");
+ if(myArray[i].equals("VA")) add_output.append("Volcanic Ash ");
+ if(myArray[i].equals("DU")) add_output.append("Widespread dust ");
+ if(myArray[i].equals("SA")) add_output.append("Sand ");
+ if(myArray[i].equals("HZ")) add_output.append("Haze ");
+ if(myArray[i].equals("PO")) add_output.append("Dust/Sand whirls ");
+ if(myArray[i].equals("SQ")) add_output.append("Squall ");
+ if(myArray[i].equals("FC")) add_output.append("Funnel clouds ");
+ if(myArray[i].equals("SS")) add_output.append("Sandstorm ");
+ if(myArray[i].equals("DS")) add_output.append("Duststorm ");
+ }
+ add_output.append("\\n"); return add_output.toString();
+ }*/
 
 
         // Check if token is temperature / dewpoint pair
-        Pattern reTempDew = Pattern.compile("^(M?)(\\d\\d)\\/(M?)(\\d\\d)?$");
+        Pattern reTempDew = Pattern.compile("^(M?)(\\d\\d)/(M?)(\\d\\d)?$");
         Matcher mreTempDew = reTempDew.matcher(token);
         if (mreTempDew.matches()) {
             //String myArray = reTempDew.exec(token);
@@ -602,21 +601,21 @@ public class WeatherParse {
         }
 
 
-        /*// Check if token is "vertical visibility" indication
-        Pattern reVV = Pattern.compile("^VV(\\d{3}|\\/{3})$");
+ /*// Check if token is "vertical visibility" indication
+ Pattern reVV = Pattern.compile("^VV(\\d{3}|\\/{3})$");
  Matcher mreVV = reVV.matcher(token);
-        if(mreVV.matches())
-        {
-            // VVddd -- ddd is vertical distance, or /// if unspecified
-            //String myArray = reVV.exec(token);
-            add_output.append("Sky is obscured -- vertical visibility");
-            if(myArray[1].equals("///"))
-                add_output.append(" cannot be assessed\\n");
-            else
-                add_output.append(": " + (100*Integer.parseInt(myArray[1],10)) + " feet\\n");
+ if(mreVV.matches())
+ {
+ // VVddd -- ddd is vertical distance, or /// if unspecified
+ //String myArray = reVV.exec(token);
+ add_output.append("Sky is obscured -- vertical visibility");
+ if(myArray[1].equals("///"))
+ add_output.append(" cannot be assessed\\n");
+ else
+ add_output.append(": " + (100*Integer.parseInt(myArray[1],10)) + " feet\\n");
 
-            return add_output.toString();
-        }*/
+ return add_output.toString();
+ }*/
 
 
         // Check if token is cloud indication
@@ -624,7 +623,7 @@ public class WeatherParse {
         Matcher mreCloud = reCloud.matcher(token);
         if (mreCloud.matches()) {
             // Clouds: aaadddkk -- aaa indicates amount of sky covered, ddd distance over
-            //                     aerodrome level, and kk the type of cloud.
+            // aerodrome level, and kk the type of cloud.
 
             if (mreCloud.group(1).equals("FEW")) {
                 cloudc = 15;
@@ -645,183 +644,183 @@ public class WeatherParse {
         }
 
 
-        /*// Check if token is part of a wind-shear indication
-        Pattern reRWY = Pattern.compile("^RWY(\\d{2})(L|C|R)?$");
+ /*// Check if token is part of a wind-shear indication
+ Pattern reRWY = Pattern.compile("^RWY(\\d{2})(L|C|R)?$");
  Matcher mreRWY = reRWY.matcher(token);
-        if(token.equals("WS"))       { add_output.append("There is wind-shear in "); return add_output.toString(); }
-        else if(token.equals("ALL")) { add_output.append("all "); return add_output.toString(); }
-        else if(token.equals("RWY")) { add_output.append("runways\\n"); return add_output.toString(); }
-        else if (mreRWY.matches())
-        {
-            //String myArray = reRWY.exec(token);
-            add_output.append("runway "+myArray[1]);
-            if(myArray[2].equals("L"))      add_output.append(" Left");
-            else if(myArray[2].equals("C")) add_output.append(" Central");
-            else if(myArray[2].equals("R")) add_output.append(" Right");
-            add_output.append("\\n");
-            return add_output.toString();
-        }*/
+ if(token.equals("WS")) { add_output.append("There is wind-shear in "); return add_output.toString(); }
+ else if(token.equals("ALL")) { add_output.append("all "); return add_output.toString(); }
+ else if(token.equals("RWY")) { add_output.append("runways\\n"); return add_output.toString(); }
+ else if (mreRWY.matches())
+ {
+ //String myArray = reRWY.exec(token);
+ add_output.append("runway "+myArray[1]);
+ if(myArray[2].equals("L")) add_output.append(" Left");
+ else if(myArray[2].equals("C")) add_output.append(" Central");
+ else if(myArray[2].equals("R")) add_output.append(" Right");
+ add_output.append("\\n");
+ return add_output.toString();
+ }*/
 
 
-        /*// Check if token is no-significant-weather indication
-        if(token.equals("NSW"))
-        {
-            add_output.append("No significant weather phenomena are observed at present\\n");
-            return add_output.toString();
-        }
+ /*// Check if token is no-significant-weather indication
+ if(token.equals("NSW"))
+ {
+ add_output.append("No significant weather phenomena are observed at present\\n");
+ return add_output.toString();
+ }
 
 
-        // Check if token is no-significant-clouds indication
-        if(token.equals("NSC"))
-        {
-            add_output.append("No significant clouds are observed below 5000 feet or below the minimum sector altitude (whichever is higher)\\n");
-            return add_output.toString();
-        }
+ // Check if token is no-significant-clouds indication
+ if(token.equals("NSC"))
+ {
+ add_output.append("No significant clouds are observed below 5000 feet or below the minimum sector altitude (whichever is higher)\\n");
+ return add_output.toString();
+ }
 
 
-        // Check if token is part of trend indication
-        if(token.equals("BECMG"))
-        {
-            add_output.append("The following weather phenomena are expected to arise soon:\\n");
-            return add_output.toString();
-        }
-        if(token.equals("TEMPO"))
-        {
-            add_output.append("The following weather phenomena are expected to arise temporarily:\\n");
-            return add_output.toString();
-        }
-        Pattern reFM = Pattern.compile("^FM(\\d{2})(\\d{2})Z?$");
+ // Check if token is part of trend indication
+ if(token.equals("BECMG"))
+ {
+ add_output.append("The following weather phenomena are expected to arise soon:\\n");
+ return add_output.toString();
+ }
+ if(token.equals("TEMPO"))
+ {
+ add_output.append("The following weather phenomena are expected to arise temporarily:\\n");
+ return add_output.toString();
+ }
+ Pattern reFM = Pattern.compile("^FM(\\d{2})(\\d{2})Z?$");
  Matcher mreFM = reFM.matcher(token);
-        if(mreFM.matches())
-        {
-            //String myArray = reFM.exec(token);
-            add_output.append("    From "+myArray[1]+":"+myArray[2]+" UTC, ");
-            return add_output.toString();
-        }
-        Pattern reTL = Pattern.compile("^TL(\\d{2})(\\d{2})Z?$");
+ if(mreFM.matches())
+ {
+ //String myArray = reFM.exec(token);
+ add_output.append(" From "+myArray[1]+":"+myArray[2]+" UTC, ");
+ return add_output.toString();
+ }
+ Pattern reTL = Pattern.compile("^TL(\\d{2})(\\d{2})Z?$");
  Matcher mreTL = reTL.matcher(token);
-        if(mreTL.matches())
-        {
-            //String myArray = reTL.exec(token);
-            add_output.append("Until "+myArray[1]+":"+myArray[2]+" UTC, ");
-            return add_output.toString();
-        }
-        Pattern reAT = Pattern.compile("^AT(\\d{2})(\\d{2})Z?$");
+ if(mreTL.matches())
+ {
+ //String myArray = reTL.exec(token);
+ add_output.append("Until "+myArray[1]+":"+myArray[2]+" UTC, ");
+ return add_output.toString();
+ }
+ Pattern reAT = Pattern.compile("^AT(\\d{2})(\\d{2})Z?$");
  Matcher mreAT = reAT.matcher(token);
-        if(mreAT.matches())
-        {
-            //String myArray = reAT.exec(token);
-            add_output.append("At "+myArray[1]+":"+myArray[2]+" UTC, ");
-            return add_output.toString();
-        }
+ if(mreAT.matches())
+ {
+ //String myArray = reAT.exec(token);
+ add_output.append("At "+myArray[1]+":"+myArray[2]+" UTC, ");
+ return add_output.toString();
+ }
 
 
-        // Check if item is runway state group
-        Pattern reRSG = Pattern.compile("^(\\d\\d)(\\d|C|\\/)(\\d|L|\\/)(\\d\\d|RD|\\/)(\\d\\d)$");
-        Matcher mreRSG = reRSG.matcher(token);
-        if(mreRSG.matches())
-        {
-            //String myArray = reRSG.exec(token);
-            add_output.append("Runway state:\\n");
+ // Check if item is runway state group
+ Pattern reRSG = Pattern.compile("^(\\d\\d)(\\d|C|\\/)(\\d|L|\\/)(\\d\\d|RD|\\/)(\\d\\d)$");
+ Matcher mreRSG = reRSG.matcher(token);
+ if(mreRSG.matches())
+ {
+ //String myArray = reRSG.exec(token);
+ add_output.append("Runway state:\\n");
 
-            // Runway designator (first 2 digits)
-            int r = Integer.parseInt(myArray[1],10);
-            if(r < 50) add_output.append("    Runway " + myArray[1] + " (or "+myArray[1]+" Left): ");
-            else if(r < 88) add_output.append("    Runway " + (r-50) + " Right: ");
-            else if(r == 88) add_output.append("    All runways: ");
+ // Runway designator (first 2 digits)
+ int r = Integer.parseInt(myArray[1],10);
+ if(r < 50) add_output.append(" Runway " + myArray[1] + " (or "+myArray[1]+" Left): ");
+ else if(r < 88) add_output.append(" Runway " + (r-50) + " Right: ");
+ else if(r == 88) add_output.append(" All runways: ");
 
-            // Check if "CLRD" occurs in digits 3-6
-            if(token.substring(2,4).equals("CLRD")) add_output.append("clear, ");
-            else
-            {
-                // Runway deposits (third digit)
-                if(myArray[2].equals("0")) add_output.append("clear and dry, ");
-                else if(myArray[2].equals("1")) add_output.append("damp, ");
-                else if(myArray[2].equals("2")) add_output.append("wet or water patches, ");
-                else if(myArray[2].equals("3")) add_output.append("rime or frost covered, ");
-                else if(myArray[2].equals("4")) add_output.append("dry snow, ");
-                else if(myArray[2].equals("5")) add_output.append("wet snow, ");
-                else if(myArray[2].equals("6")) add_output.append("slush, ");
-                else if(myArray[2].equals("7")) add_output.append("ice, ");
-                else if(myArray[2].equals("8")) add_output.append("compacted or rolled snow, ");
-                else if(myArray[2].equals("9")) add_output.append("frozen ruts or ridges, ");
-                else if(myArray[2].equals("/")) add_output.append("deposit not reported, ");
+ // Check if "CLRD" occurs in digits 3-6
+ if(token.substring(2,4).equals("CLRD")) add_output.append("clear, ");
+ else
+ {
+ // Runway deposits (third digit)
+ if(myArray[2].equals("0")) add_output.append("clear and dry, ");
+ else if(myArray[2].equals("1")) add_output.append("damp, ");
+ else if(myArray[2].equals("2")) add_output.append("wet or water patches, ");
+ else if(myArray[2].equals("3")) add_output.append("rime or frost covered, ");
+ else if(myArray[2].equals("4")) add_output.append("dry snow, ");
+ else if(myArray[2].equals("5")) add_output.append("wet snow, ");
+ else if(myArray[2].equals("6")) add_output.append("slush, ");
+ else if(myArray[2].equals("7")) add_output.append("ice, ");
+ else if(myArray[2].equals("8")) add_output.append("compacted or rolled snow, ");
+ else if(myArray[2].equals("9")) add_output.append("frozen ruts or ridges, ");
+ else if(myArray[2].equals("/")) add_output.append("deposit not reported, ");
 
-                // Extent of runway contamination (fourth digit)
-                if(myArray[3].equals("1")) add_output.append("contamination 10% or less, ");
-                else if(myArray[3].equals("2")) add_output.append("contamination 11% to 25%, ");
-                else if(myArray[3].equals("5")) add_output.append("contamination 26% to 50%, ");
-                else if(myArray[3].equals("9")) add_output.append("contamination 51% to 100%, ");
-                else if(myArray[3].equals("/")) add_output.append("contamination not reported, ");
+ // Extent of runway contamination (fourth digit)
+ if(myArray[3].equals("1")) add_output.append("contamination 10% or less, ");
+ else if(myArray[3].equals("2")) add_output.append("contamination 11% to 25%, ");
+ else if(myArray[3].equals("5")) add_output.append("contamination 26% to 50%, ");
+ else if(myArray[3].equals("9")) add_output.append("contamination 51% to 100%, ");
+ else if(myArray[3].equals("/")) add_output.append("contamination not reported, ");
 
-                // Depth of deposit (fifth and sixth digits)
-                if(myArray[4].equals("//")) add_output.append("depth of deposit not reported, ");
-                else
-                {
-                    int d = Integer.parseInt(myArray[4],10);
-                    if(d == 0) add_output.append("deposit less than 1 mm deep, ");
-                    else if ((d >  0) && (d < 91)) add_output.append("deposit is "+d+" mm deep, ");
-                    else if (d == 92) add_output.append("deposit is 10 cm deep, ");
-                    else if (d == 93) add_output.append("deposit is 15 cm deep, ");
-                    else if (d == 94) add_output.append("deposit is 20 cm deep, ");
-                    else if (d == 95) add_output.append("deposit is 25 cm deep, ");
-                    else if (d == 96) add_output.append("deposit is 30 cm deep, ");
-                    else if (d == 97) add_output.append("deposit is 35 cm deep, ");
-                    else if (d == 98) add_output.append("deposit is 40 cm or more deep, ");
-                    else if (d == 99) add_output.append("runway(s) is/are non-operational due to snow, slush, ice, large drifts or runway clearance, but depth of deposit is not reported, ");
-                }
-            }
+ // Depth of deposit (fifth and sixth digits)
+ if(myArray[4].equals("//")) add_output.append("depth of deposit not reported, ");
+ else
+ {
+ int d = Integer.parseInt(myArray[4],10);
+ if(d == 0) add_output.append("deposit less than 1 mm deep, ");
+ else if ((d > 0) && (d < 91)) add_output.append("deposit is "+d+" mm deep, ");
+ else if (d == 92) add_output.append("deposit is 10 cm deep, ");
+ else if (d == 93) add_output.append("deposit is 15 cm deep, ");
+ else if (d == 94) add_output.append("deposit is 20 cm deep, ");
+ else if (d == 95) add_output.append("deposit is 25 cm deep, ");
+ else if (d == 96) add_output.append("deposit is 30 cm deep, ");
+ else if (d == 97) add_output.append("deposit is 35 cm deep, ");
+ else if (d == 98) add_output.append("deposit is 40 cm or more deep, ");
+ else if (d == 99) add_output.append("runway(s) is/are non-operational due to snow, slush, ice, large drifts or runway clearance, but depth of deposit is not reported, ");
+ }
+ }
 
-            // Friction coefficient or braking action (seventh and eighth digit)
-            if(myArray[5].equals("//")) add_output.append("braking action not reported");
-            else
-            {
-                int b = Integer.parseInt(myArray[5],10);
-                if(b<91) add_output.append("friction coefficient 0."+myArray[5]);
-                else
-                {
-                    if(b == 91) add_output.append("braking action is poor");
-                    else if(b == 92) add_output.append("braking action is medium/poor");
-                    else if(b == 93) add_output.append("braking action is medium");
-                    else if(b == 94) add_output.append("braking action is medium/good");
-                    else if(b == 95) add_output.append("braking action is good");
-                    else if(b == 99) add_output.append("braking action figures are unreliable");
-                }
-            }
-            add_output.append("\\n"); return add_output.toString();
-        }
+ // Friction coefficient or braking action (seventh and eighth digit)
+ if(myArray[5].equals("//")) add_output.append("braking action not reported");
+ else
+ {
+ int b = Integer.parseInt(myArray[5],10);
+ if(b<91) add_output.append("friction coefficient 0."+myArray[5]);
+ else
+ {
+ if(b == 91) add_output.append("braking action is poor");
+ else if(b == 92) add_output.append("braking action is medium/poor");
+ else if(b == 93) add_output.append("braking action is medium");
+ else if(b == 94) add_output.append("braking action is medium/good");
+ else if(b == 95) add_output.append("braking action is good");
+ else if(b == 99) add_output.append("braking action figures are unreliable");
+ }
+ }
+ add_output.append("\\n"); return add_output.toString();
+ }
 
-        if(token.equals("SNOCLO"))
-        {
-            add_output.append("Aerodrome is closed due to snow on runways\\n");
-            return add_output.toString();
-        }
+ if(token.equals("SNOCLO"))
+ {
+ add_output.append("Aerodrome is closed due to snow on runways\\n");
+ return add_output.toString();
+ }
 
-        // Check if item is sea status indication
+ // Check if item is sea status indication
 
-        Pattern reSea = Pattern.compile("^W(M)?(\\d\\d)\\/S(\\d)");
-        Matcher mreSea = reRSG.matcher(token);
-        if(mreSea.matches())
-        {
-            //String myArray = reSea.exec(token);
-            add_output.append("Sea surface temperature: ");
-            if(myArray[1].equals("M"))
-                add_output.append("-");
-            add_output.append(Integer.parseInt(myArray[2],10) + " degrees Celsius\\n");
+ Pattern reSea = Pattern.compile("^W(M)?(\\d\\d)\\/S(\\d)");
+ Matcher mreSea = reRSG.matcher(token);
+ if(mreSea.matches())
+ {
+ //String myArray = reSea.exec(token);
+ add_output.append("Sea surface temperature: ");
+ if(myArray[1].equals("M"))
+ add_output.append("-");
+ add_output.append(Integer.parseInt(myArray[2],10) + " degrees Celsius\\n");
 
-            add_output.append("Sea waves have height: ");
-            if(myArray[3].equals("0")) add_output.append("0 m (calm)\\n");
-            else if(myArray[3].equals("1")) add_output.append("0-0,1 m\\n");
-            else if(myArray[3].equals("2")) add_output.append("0,1-0,5 m\\n");
-            else if(myArray[3].equals("3")) add_output.append("0,5-1,25 m\\n");
-            else if(myArray[3].equals("4")) add_output.append("1,25-2,5 m\\n");
-            else if(myArray[3].equals("5")) add_output.append("2,5-4 m\\n");
-            else if(myArray[3].equals("6")) add_output.append("4-6 m\\n");
-            else if(myArray[3].equals("7")) add_output.append("6-9 m\\n");
-            else if(myArray[3].equals("8")) add_output.append("9-14 m\\n");
-            else if(myArray[3].equals("9")) add_output.append("more than 14 m (huge!)\\n");
-            return add_output.toString();
-        }*/
+ add_output.append("Sea waves have height: ");
+ if(myArray[3].equals("0")) add_output.append("0 m (calm)\\n");
+ else if(myArray[3].equals("1")) add_output.append("0-0,1 m\\n");
+ else if(myArray[3].equals("2")) add_output.append("0,1-0,5 m\\n");
+ else if(myArray[3].equals("3")) add_output.append("0,5-1,25 m\\n");
+ else if(myArray[3].equals("4")) add_output.append("1,25-2,5 m\\n");
+ else if(myArray[3].equals("5")) add_output.append("2,5-4 m\\n");
+ else if(myArray[3].equals("6")) add_output.append("4-6 m\\n");
+ else if(myArray[3].equals("7")) add_output.append("6-9 m\\n");
+ else if(myArray[3].equals("8")) add_output.append("9-14 m\\n");
+ else if(myArray[3].equals("9")) add_output.append("more than 14 m (huge!)\\n");
+ return add_output.toString();
+ }*/
 
     }
 
@@ -842,7 +841,7 @@ public class WeatherParse {
                 continue;
             }
 
-            Pattern reDate = Pattern.compile("(\\d\\d\\d\\d)\\/(\\d\\d)\\/(\\d\\d)");
+            Pattern reDate = Pattern.compile("(\\d\\d\\d\\d)/(\\d\\d)/(\\d\\d)");
             Matcher mreDate = reDate.matcher(tolken);
             if (mreDate.matches()) {
                 String g1 = mreDate.group(1);
@@ -867,7 +866,7 @@ public class WeatherParse {
 
 
         }
-        Log.i("Finished", getMethodName());
+        //Log.i("Finished", getMethodName());
 
     }
 
@@ -916,7 +915,7 @@ public class WeatherParse {
         int itPrice = 0;
         String itType = null;
         String itFlavor = "";
-        String tmpFlavor = "";
+        String tmpFlavor;
 
         while (parser.next() != END_TAG) {
             if (parser.getEventType() != START_TAG) {
@@ -938,7 +937,7 @@ public class WeatherParse {
                 skip(parser);
             }
         }
-        return new MenuMaker(itName, itPrice, itFlavor, itType);
+        return new MenuMaker(itName, itPrice, itFlavor, itType, 0);
     }
 
     // Processes Item_Name tags in the feed.
